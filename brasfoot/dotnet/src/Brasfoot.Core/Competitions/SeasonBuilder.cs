@@ -23,8 +23,15 @@ public static class SeasonBuilder
         var national = session.State.World.LeagueOf(countryId);
         if (national is null) return result;
 
+        // best.Z.Ar() (Z.java:177): na carreira brasileira completa (bk), a 4ª divisão nasce VAZIA e
+        // é preenchida no gancho cD por best.a.m() (Série D, best.w.Q). Aqui ela simplesmente não é
+        // criada agora — CreateSerieD a cria no meio da temporada.
+        var deferLast = SerieDApplies(session) && national.Divisions.Count >= 4;
         for (var index = 0; index < national.Divisions.Count; index++)
+        {
+            if (deferLast && index == national.Divisions.Count - 1) continue;
             result.Add(BuildDivision(session, national, index));
+        }
         return result;
     }
 
@@ -135,18 +142,162 @@ public static class SeasonBuilder
     }
 
     /// <summary>
-    /// <c>best.a.m()/l()</c> (<c>best/a.java:649-700</c>): cria a Copa do Brasil a partir de um grupo,
-    /// no gancho <c>cD</c> do meio da temporada. A parte da Série D (elenco via <c>best.w.Q</c>) ainda
-    /// não foi portada — esta versão cria só a copa. Devolve <see langword="null"/> quando o grupo não
-    /// comporta o formato de potes.
+    /// <c>bk()</c> (<c>best/a.java:2256</c>): carreira brasileira "completa" — joga estaduais e o país
+    /// tem 4 divisões nacionais. É a condição de <c>best.a.m()</c> (Série D) em vez de <c>best.a.l()</c>
+    /// (só Copa do Brasil a partir do país inteiro). Vale só para o Brasil.
     /// </summary>
-    public static CopaDoBrasilCompetition? CreateSerieDAndCopa(GameSession session, IReadOnlyList<Team>? pool = null)
+    public static bool SerieDApplies(GameSession session)
     {
+        ArgumentNullException.ThrowIfNull(session);
+        if (!session.State.Options.JogaEstadual) return false;
+        var national = session.State.World.LeagueOf(Countries.Brasil);
+        return national is { Divisions.Count: >= 4 };
+    }
+
+    /// <summary>
+    /// As divisões nacionais "de cima" (todas menos a última, a Série D): fonte dos clubes da Copa do
+    /// Brasil na carreira completa (<c>best.a.m()</c>) e do filtro de elegíveis da Série D.
+    /// </summary>
+    public static List<List<Team>> NationalTopDivisions(GameSession session)
+    {
+        var national = session.State.World.LeagueOf(Countries.Brasil);
+        if (national is null) return new List<List<Team>>();
+        var take = SerieDApplies(session) ? Math.Max(0, national.Divisions.Count - 1) : national.Divisions.Count;
+        return national.Divisions.Take(take).ToList();
+    }
+
+    /// <summary>
+    /// Elegível à Série D: clube brasileiro fora das divisões 1–3 (<c>getDivisao() == 0</c> no original,
+    /// onde a 4ª divisão nasce vazia). No port a 4ª divisão carrega os pré-selecionados, então o filtro
+    /// é "não está nas divisões de cima".
+    /// </summary>
+    public static bool EligibleForSerieD(GameSession session, Team team)
+    {
+        if (team.CountryId != Countries.Brasil) return false;
+        foreach (var division in NationalTopDivisions(session))
+            if (division.Contains(team)) return false;
+        return true;
+    }
+
+    /// <summary>
+    /// <c>best.w.Q(n)</c> aplicado a uma sessão: monta o quadro da Série D de <paramref name="size"/>
+    /// clubes a partir dos slots dos estaduais (<see cref="SerieDSelection.FromFederations"/>) e dos
+    /// clubes brasileiros elegíveis (<c>Z.jg()</c> filtrado). Os clubes livres (<c>bY()</c>) ainda não
+    /// têm equivalente no port, então a primeira etapa de <c>Q</c> entra vazia.
+    /// </summary>
+    public static List<Team> SelectSerieDField(GameSession session, int size)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        var slots = SerieDSelection.FromFederations(
+            session.StateFederations, team => EligibleForSerieD(session, team));
+        var country = session.State.World.Teams
+            .Where(t => EligibleForSerieD(session, t))
+            .ToList();
+        return SerieDSelection.Select(size, slots, freeTeams: [], country);
+    }
+
+    /// <summary>
+    /// Cria a Série D (4ª divisão nacional) no gancho <c>cD</c> (<c>best.a.m()</c>), depois de os
+    /// estaduais terem terminado: <c>PhasedCompetition</c> com grupos (default 8×8), ida e volta dentro
+    /// do grupo e mata-mata dos classificados (default 4 por grupo = 32), nos dias
+    /// <see cref="DayType.Nacional"/>. Quando o formato configurado não cabe no quadro (grupos que não
+    /// dividem, mata-mata não potência de dois), cai numa liga de pontos corridos. Devolve
+    /// <see langword="null"/> para quadro vazio.
+    /// </summary>
+    public static PhasedCompetition? CreateSerieD(
+        GameSession session, IReadOnlyList<Team> field, ConfigLigaType? config = null)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(field);
+        if (field.Count == 0) return null;
+
+        var national = session.State.World.LeagueOf(Countries.Brasil);
+        var division = national?.Divisions.Count ?? 4;
+        var competition = new Competition(
+            4, $"{national?.Name ?? "Brasileirão"} — {division}ª divisão", CompetitionType.Nacional);
+
+        var phased = new PhasedCompetition(session, competition, field, SerieDFormat(field.Count, config));
+        session.Phased.Add(phased);
+        return phased;
+    }
+
+    /// <summary>
+    /// Formato da Série D a partir do <c>.cfg</c> da 4ª divisão (grupos, classificados por grupo, ida e
+    /// volta, jogos dentro do grupo). Sem configuração, usa 8 grupos × 4 classificados (a 4ª divisão
+    /// brasileira). Se o quadro não comportar grupos + mata-mata potência de dois, devolve liga de
+    /// pontos corridos (sem grupos).
+    /// </summary>
+    private static PhaseOptions SerieDFormat(int pool, ConfigLigaType? config)
+    {
+        var groups = config?.Groups ?? 8;
+        var qualifiers = config?.KnockoutQualifiersPerGroup ?? 4;
+        var doubleRound = config?.DoubleRound ?? true;
+        var withinGroup = config?.MatchesWithinGroup ?? true;
+        var knockout = groups > 1 ? qualifiers * groups : qualifiers;
+
+        var fits = groups > 1
+            && pool % groups == 0
+            && knockout > 0
+            && knockout <= pool
+            && (knockout & (knockout - 1)) == 0;
+
+        if (!fits)
+            return new PhaseOptions
+            {
+                Groups = 1,
+                DoubleRound = true,
+                MatchesWithinGroup = false,
+                KnockoutQualifiersPerGroup = 0,
+                DayType = DayType.Nacional,
+            };
+
+        return new PhaseOptions
+        {
+            Groups = groups,
+            DoubleRound = doubleRound,
+            MatchesWithinGroup = withinGroup,
+            ContiguousGroups = false,
+            KnockoutQualifiersPerGroup = qualifiers,
+            KnockoutTwoLegged = false,
+            DayType = DayType.Nacional,
+        };
+    }
+
+    /// <summary>
+    /// <c>best.a.m()/l()</c> (<c>best/a.java:649-700</c>): cria, no gancho <c>cD</c> do meio da
+    /// temporada, a Copa do Brasil — e, na carreira brasileira completa (<see cref="SerieDApplies"/>),
+    /// também a Série D (<c>best.w.Q</c>). Sem carreira completa, cai em <c>l()</c>: a Copa do Brasil a
+    /// partir de todos os clubes do país. Devolve <see langword="null"/> quando o grupo não comporta o
+    /// formato de potes.
+    /// </summary>
+    public static CopaDoBrasilCompetition? CreateSerieDAndCopa(GameSession session, ConfigLigaType? serieDConfig = null)
+    {
+        ArgumentNullException.ThrowIfNull(session);
         var brazilian = session.State.World.LeagueOf(Countries.Brasil);
-        var field = pool ?? (brazilian is not null
+
+        if (SerieDApplies(session) && brazilian is not null)
+        {
+            var size = brazilian.Divisions[^1].Count;
+            var field = SelectSerieDField(session, size);
+            if (field.Count == size)
+            {
+                CreateSerieD(session, field, serieDConfig);
+
+                // m(): a Copa do Brasil sai das divisões 1–3 + os extras de eh().
+                var pool = NationalTopDivisions(session).SelectMany(d => d).ToList();
+                var extras = SerieDSelection.ExtraTeams(SerieDSelection.FromFederations(
+                    session.StateFederations, team => EligibleForSerieD(session, team)));
+                foreach (var team in extras)
+                    if (!pool.Contains(team)) pool.Add(team);
+                return CreateCopaDoBrasil(session, pool);
+            }
+            // Quadro não bateu com o tamanho esperado: cai no ramo de l().
+        }
+
+        var all = brazilian is not null
             ? brazilian.Teams.ToList()
-            : session.State.World.Teams.Where(t => t.CountryId == Countries.Brasil).ToList());
-        return CreateCopaDoBrasil(session, field);
+            : session.State.World.Teams.Where(t => t.CountryId == Countries.Brasil).ToList();
+        return CreateCopaDoBrasil(session, all);
     }
 
     /// <summary>

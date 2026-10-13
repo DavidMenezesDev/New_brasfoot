@@ -200,6 +200,10 @@ dotnet run --project src/Brasfoot.Cli -- copadobrasil
   fórmula padrão 0 quando não há `.ces` ou a fórmula pede mais clubes que o pool, o grupo padrão paulista
   (`w.z`) e a liquidação de acesso/rebaixamento (`w.ee`) em `SettlePromotionRelegation`
   (`yW`/`yU`: candidatos a subir pela chave e rebaixados pelo fundo da tabela).
+- `Core/Competitions/SerieDSelection`: a seleção da Série D (`best.w.Q`) e os extras da Copa (`best.w.eh`)
+  — clubes livres, 19 passagens pelos grupos de estados `sb..sf` (`w.a`), preenchimento por `Z.jg()`,
+  corte e as ordenações por `jW`/`jX` (`ah`); `FromFederations` monta os slots de estado (`a.SR.bx()`) a
+  partir das posições finais dos estaduais, filtrando as divisões 1–3.
 - `Core/Competitions/SeasonBuilder`: `CreateStateChampionships` (todas as federações com ≥6 clubes,
   como `w.dZ`) e `CreateRegionalChampionships` (`f.F.an`): cada região (Rio-SP, Sul-Minas, Copa do
   Nordeste, Copa Verde) reúne os 16 primeiros clubes das suas federações, ordenados por `abm`
@@ -223,15 +227,23 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
 
 - `DayEvent.CriaSerieDCopa` (`cD`) entra no laço de dias pelo gancho `SeasonHooks.CreateSerieDAndCopa`:
   `GameSession.SeedNationalTeamEvents` agenda o evento no primeiro dia Nacional (fila de **fim de dia**,
-  como o `a.b(n2, 4, 1)` de `best/f.java:543-544`, condicionado aos regionais ligados) e o `Dispatch`
-  o encaminha ao hook. `SeasonBuilder.CreateSerieDAndCopa` (`best.a.m()/l()`) cria a Copa do Brasil a
-  partir do grupo de clubes brasileiros no meio da temporada.
+  como o `a.b(n2, 4, 1)` de `best/f.java:543-544`, condicionado aos regionais ligados ou à carreira
+  completa) e o `Dispatch` o encaminha ao hook. `SeasonBuilder.CreateSerieDAndCopa` (`best.a.m()/l()`)
+  cria a Série D (carreira completa) e a Copa do Brasil no meio da temporada.
+- `Core/Competitions/SerieDSelection`: a seleção da Série D (`best.w.Q`) — clubes livres, 19 passagens
+  pelos grupos de estados `sb..sf` (`best.w.a`), preenchimento por `Z.jg()`, corte e ordenações por
+  `jW`/`jX` (`best.ah`) — mais os extras da Copa (`best.w.eh`). `FromFederations` monta os slots de
+  estado (`a.SR.bx()`) a partir das posições finais dos estaduais, filtrando as divisões 1–3.
+  `SeasonBuilder.SelectSerieDField`/`CreateSerieD` montam o quadro (8 grupos × 8, ida e volta dentro do
+  grupo, mata-mata de 32 = 4 classificados por grupo) e a criam nos dias Nacionais; `CreateNationalLeagues`
+  deixa a 4ª divisão de fora no início (como `Z.Ar()`), e sem config/formato válido a Série D cai em
+  pontos corridos. Testado em `tests/Brasfoot.Tests/SerieDTests.cs` (20 testes).
 - `Core/Season/FullSeasonHooks`: a montagem concreta da temporada brasileira sobre `SeasonBuilder` —
-  divisões da liga nacional + estaduais + regionais em `BuildCompetitions`, a Copa do Brasil em
-  `CreateSerieDAndCopa` (nascendo no `cD`, não no início do ano), a Supercopa em `BuildCompetitions`
+  divisões da liga nacional + estaduais + regionais em `BuildCompetitions`, a Série D e a Copa do Brasil
+  em `CreateSerieDAndCopa` (nascendo no `cD`, não no início do ano), a Supercopa em `BuildCompetitions`
   (a partir do histórico da temporada anterior, `CreateSupercupFromHistory`) e o arquivo de campeões em
-  `SeasonRollover`. É a ponte para o front-end (Fase 10). A Série D propriamente dita (elenco via
-  `best.w.Q`) ainda não é criada.
+  `SeasonRollover`. Recebe as configs `.ces` (estaduais) e `.cfg` da 4ª divisão (Série D). É a ponte para
+  o front-end (Fase 10).
 - `GameSession.StartNextSeason`: versão mínima da virada de `best.f.al()` — garante a virada
   (`SeasonRollover` uma vez por temporada), avança `GameState.Season`, descarta as competições do ano
   (`Leagues`/`Cups`/`BrasilCup`/`Phased`/`StateFederations`) e remonta o calendário; as competições do
@@ -241,17 +253,18 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
   `(temporada, competição)`, pulando as 1ªs fases estaduais/regionais (que vivem em `session.Leagues`).
   `SeasonBuilder.CreateSupercupFromHistory` usa esse histórico para montar a Supercopa da temporada
   seguinte (campeão da liga × campeão da copa, com o vice da copa como fallback).
-- Testado em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs` (16 testes): agendamento/dispatch do `cD`,
+- Testado em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs` (17 testes): agendamento/dispatch do `cD`,
   arquivo de liga e de copa (campeão + vice), idempotência, `Find`, Supercopa a partir do histórico
-  (incluindo o fallback do vice) e uma temporada inteira sintética (96 clubes) jogada pelo
-  `FullSeasonHooks` até o arquivo dos campeões, mais a virada para a temporada seguinte
-  (`StartNextSeason` + Supercopa semeada pelo histórico).
+  (incluindo o fallback do vice), a criação da Série D (64 clubes, 8 grupos, mata-mata de 32) e uma
+  temporada inteira sintética (124 clubes, 20/20/20/64) jogada pelo `FullSeasonHooks` até o arquivo dos
+  campeões, mais a virada para a temporada seguinte (`StartNextSeason` + Supercopa semeada pelo histórico).
 
 ## Ainda não portado
 
-- Copa do Brasil: o driver (`CopaDoBrasilCompetition`), a notificação `Bh` e o gancho `cD`
-  (`CreateSerieDAndCopa`) **foram portados** (ver acima). Falta a Série D propriamente dita (elenco via
-  `best.w.Q`, fase classificatória + mata-mata), que `CreateSerieDAndCopa` hoje deixa de fora.
+- Copa do Brasil e Série D **foram portadas** (ver acima): o driver (`CopaDoBrasilCompetition`), a
+  notificação `Bh`, o gancho `cD` (`CreateSerieDAndCopa`), a seleção da Série D (`SerieDSelection` /
+  `best.w.Q`) com a 4ª divisão criada no meio da temporada. Falta o insumo dos clubes livres (`bY()`),
+  que só existe quando um clube é removido de uma liga (`al.lP()`).
 - Histórico de campeões por temporada **foi portado** (`SeasonArchive` + `ChampionRecord` alimentado
   pelas competições) e a Supercopa da temporada nasce dele (`SeasonBuilder.CreateSupercupFromHistory`
   via `FullSeasonHooks`); a virada da temporada (`GameSession.StartNextSeason`) **foi portada** na versão

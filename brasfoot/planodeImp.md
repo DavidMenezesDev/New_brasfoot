@@ -228,11 +228,25 @@ Princípios:
     virada de `best.f.al()`) garante a virada, avança a temporada, descarta as competições do ano e
     remonta o calendário. 16 testes novos em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs`. 256 testes
     no total.
-  - **Falta:** a Série D propriamente dita (criação do elenco via `best.w.Q`, fase classificatória +
-    mata-mata), que `CreateSerieDAndCopa` hoje deixa de fora (só a Copa do Brasil). O acesso/rebaixamento
-    estadual calculado por `SettlePromotionRelegation` ainda não é aplicado aos dados do mundo (a
-    federação é reconstruída pelo nível a cada temporada, como no original). A virada completa
-    (evolução semanal, finanças, mercado de técnicos) fica para as Fases 4/5/6.
+  - **Feito (Série D):** a 4ª divisão nacional na carreira completa (`bk()`: `JogaEstadual` + 4 divisões)
+    nasce no gancho `cD` via `best.a.m()`: `Core/Competitions/SerieDSelection` porta `best.w.Q`
+    (clubes livres, 19 passagens pelos grupos `sb..sf` = `w.a`, preenchimento por `Z.jg()`, corte e
+    as ordenações por `jW`/`jX` de `ah`, além de `best.w.eh` para os extras da Copa). Os slots de
+    estado (`a.SR.bx()`) saem de `FromFederations` (posições finais dos estaduais, filtrando as
+    divisões 1–3) e `SeasonBuilder.SelectSerieDField` monta o quadro. `CreateNationalLeagues` deixa
+    a 4ª divisão de fora (como `Z.Ar()`, que a cria vazia), e `SeasonBuilder.CreateSerieD` a cria no
+    meio da temporada: 8 grupos × 8 (intercalados, ida e volta dentro do grupo) + mata-mata de 32
+    (4 classificados por grupo), nos dias Nacionais; sem `FixOriginalBugs`/config o formato cabe no
+    quadro, senão cai em pontos corridos. A Copa do Brasil no ramo `m()` sai das divisões 1–3 +
+    `eh()`; o ramo `l()` (regionais sem carreira completa) continua usando o país inteiro.
+    `FullSeasonHooks` recebe a config `.cfg` da 4ª divisão (default brasileiro 8×4). 20 testes de
+    `SerieDSelection` (`tests/Brasfoot.Tests/SerieDTests.cs`) + 1 de criação da Série D; verificado
+    com os dados reais (brasfoot-linux: 64 clubes, 8 grupos de 8). 277 testes no total.
+  - **Falta:** o acesso/rebaixamento estadual calculado por `SettlePromotionRelegation` ainda não é
+    aplicado aos dados do mundo (a federação é reconstruída pelo nível a cada temporada, como no
+    original). Os clubes livres (`bY()`) da Série D ainda não têm equivalente (a 1ª etapa de `Q` entra
+    vazia; só surgem quando um clube é removido de uma liga). A virada completa (evolução semanal,
+    finanças, mercado de técnicos) fica para as Fases 4/5/6.
 
 ### Fase 5 — Finanças e estádio (spec-financas §1)
 - `Ledger` por temporada com categorias; salários (mensal dia 2 ×4 ou semanal domingo, só em meses

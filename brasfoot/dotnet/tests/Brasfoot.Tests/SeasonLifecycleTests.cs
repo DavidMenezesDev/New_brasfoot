@@ -266,16 +266,17 @@ public class SeasonLifecycleTests
         var session = new GameSession(state, TestData.Context(), new FullSeasonHooks());
         session.BuildSeasonCalendar();
 
-        // 4 divisões nacionais de 24 clubes.
+        // 4 divisões no mundo; a 4ª (Série D) só é criada no gancho cD, então no início há 3 ligas.
         Assert.Equal(4, session.State.World.LeagueOf(Brasil)!.Divisions.Count);
-        Assert.Equal(4, session.Leagues.Count(l => l.Competition.Type == CompetitionType.Nacional));
+        Assert.Equal(3, session.Leagues.Count(l => l.Competition.Type == CompetitionType.Nacional));
 
-        // Estaduais: SP e RJ com 8 clubes cada (1 divisão de 6 + 2 de fora).
-        Assert.Equal(2, session.StateFederations.Count);
+        // Estaduais: 8 estados com 8 clubes cada (1 divisão de 6 + 2 de fora).
+        Assert.Equal(8, session.StateFederations.Count);
         Assert.All(session.StateFederations, f => Assert.Single(f.Divisions));
 
-        // Regionais: só o Rio-SP tem 16 clubes.
-        Assert.Single(session.Phased, p => p.Competition.Type == CompetitionType.Regionais);
+        // Regionais: Rio-SP (SP + RJ) e Sul-Minas (MG, PR, RS, SC) têm 16+ clubes.
+        Assert.Equal(2, session.Phased.Count(p => p.Competition.Type == CompetitionType.Regionais));
+        Assert.Contains(session.Phased, p => p.Competition.Name == "Rio-SP");
 
         // A Copa do Brasil ainda não existe no início: nasce no gancho cD.
         Assert.Empty(session.BrasilCup);
@@ -310,6 +311,45 @@ public class SeasonLifecycleTests
         Assert.Contains(state.Champions, c => c.Competition == "Paulista");
         Assert.Contains(state.Champions, c => c.Competition == "Carioca");
         Assert.Contains(state.Champions, c => c.Competition == "Rio-SP");
+
+        // A Série D (4ª divisão) também entrou no arquivo.
+        Assert.Contains(state.Champions, c => c.Competition.EndsWith("4ª divisão"));
+    }
+
+    // ---- Série D (best.a.m() / best.w.Q) -------------------------------------
+
+    [Fact]
+    public void FullSeasonHooks_creates_the_serie_d_with_eight_groups_and_a_32_team_knockout()
+    {
+        var world = BuildBrazilianWorld();
+        var state = GameState.FromWorld(world, new GameOptions());
+        state.BaseYear = 2022;
+        var session = new GameSession(state, TestData.Context(), new FullSeasonHooks());
+        session.BuildSeasonCalendar();
+
+        // No início não há Série D: nasce no gancho cD (primeiro dia Nacional).
+        Assert.DoesNotContain(session.Phased, p => p.Competition.Name.EndsWith("4ª divisão"));
+
+        var days = 0;
+        while (session.Phased.All(p => !p.Competition.Name.EndsWith("4ª divisão")) && days++ < 400)
+            session.AdvanceToNextMatchDay();
+
+        var serieD = Assert.Single(session.Phased, p => p.Competition.Name.EndsWith("4ª divisão"));
+        Assert.Equal(CompetitionType.Nacional, serieD.Competition.Type);
+        Assert.Equal(DayType.Nacional, serieD.DayType);
+
+        // 64 clubes em 8 grupos de 8, com 4 classificados por grupo (32 no mata-mata).
+        Assert.Equal(64, serieD.Pool.Count);
+        Assert.Equal(8, serieD.Groups.Count);
+        Assert.All(serieD.Groups, g => Assert.Equal(8, g.Count));
+
+        // A 1ª fase roda nos dias Nacionais, ida e volta dentro do grupo.
+        Assert.All(serieD.Phase1, l => Assert.All(
+            l.DayIndexes, i => Assert.Equal(DayType.Nacional, state.Calendar.Days[i].Type)));
+
+        // O quadro não contém clube de divisão 1–3.
+        var top = SeasonBuilder.NationalTopDivisions(session).SelectMany(d => d).ToHashSet();
+        Assert.DoesNotContain(serieD.Pool, t => top.Contains(t));
     }
 
     // ---- Virada de temporada (GameSession.StartNextSeason) -------------------
@@ -332,7 +372,7 @@ public class SeasonLifecycleTests
         session.BuildSeasonCalendar();
 
         var season1Leagues = session.Leagues.ToList();
-        Assert.Equal(4, season1Leagues.Count(l => l.Competition.Type == CompetitionType.Nacional));
+        Assert.Equal(3, season1Leagues.Count(l => l.Competition.Type == CompetitionType.Nacional));
 
         PlayWholeSeason(session);
         session.AdvanceToNextMatchDay(); // arquiva os campeões
@@ -344,8 +384,8 @@ public class SeasonLifecycleTests
 
         // Nenhuma competição da temporada anterior sobrevive por referência.
         Assert.All(season1Leagues, l => Assert.DoesNotContain(l, session.Leagues));
-        Assert.Equal(4, session.Leagues.Count(l => l.Competition.Type == CompetitionType.Nacional));
-        Assert.Equal(2, session.StateFederations.Count);
+        Assert.Equal(3, session.Leagues.Count(l => l.Competition.Type == CompetitionType.Nacional));
+        Assert.Equal(8, session.StateFederations.Count);
     }
 
     [Fact]
@@ -401,28 +441,32 @@ public class SeasonLifecycleTests
     }
 
     /// <summary>
-    /// Mundo sintético com 96 clubes brasileiros: 4 divisões nacionais de 24, 8 em SP e 8 no RJ
-    /// (para estaduais e o regional Rio-SP) e os demais sem estado (fora de estaduais/regionais).
-    /// 96 clubes bastam para o formato de potes da Copa do Brasil (12 cabeças + 80).
+    /// Mundo sintético com 124 clubes brasileiros: 4 divisões nacionais (20/20/20/64), os 64 clubes da
+    /// 4ª divisão repartidos em 8 estados (4 de <c>sb</c> + 2 de <c>sc</c> + 2 de <c>sd</c>) para os
+    /// estaduais, os slots da Série D (<c>best.w.Q</c>) e os extras da Copa (<c>best.w.eh</c>). Os 60
+    /// clubes das divisões 1–3 não têm estado. 108 clubes chegam à Copa do Brasil (12 cabeças + 96),
+    /// acima do mínimo de 92 do formato de potes.
     /// </summary>
     private static World BuildBrazilianWorld()
     {
         var world = new World();
         var teams = new List<Team>();
-        for (var i = 0; i < 96; i++)
+        for (var i = 0; i < 124; i++)
         {
-            var state = i < 8 ? Sp : i < 16 ? Rj : -1;
-            var team = TestData.Team($"Clube {i:D2}", 40 + (i % 40), Brasil, reputation: i % 6);
-            team.State = state;
-            team.Division = i / 24 + 1;
+            var team = TestData.Team($"Clube {i:D3}", 40 + (i % 40), Brasil, reputation: i % 6);
+            team.Division = i < 60 ? i / 20 + 1 : 4;
+            team.State = i < 60 ? -1 : SerieDStates[(i - 60) / 8];
             teams.Add(team);
             world.Teams.Add(team);
         }
 
         var league = new League(Brasil, "Brasileirão");
         for (var d = 0; d < 4; d++)
-            league.Divisions.Add(teams.Skip(d * 24).Take(24).ToList());
+            league.Divisions.Add(teams.Skip(d * 20).Take(d < 3 ? 20 : 64).ToList());
         world.Leagues.Add(league);
         return world;
     }
+
+    /// <summary>Estados da 4ª divisão sintética: 4 de <c>sb</c>, 2 de <c>sc</c> e 2 de <c>sd</c>.</summary>
+    private static readonly int[] SerieDStates = [Sp, Rj, 10, 22, 17, 23, 8, 1];
 }

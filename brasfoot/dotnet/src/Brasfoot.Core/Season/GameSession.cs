@@ -151,9 +151,9 @@ public sealed class GameSession
         var nacional20 = Calendar.NthIndexOfType(DayType.Nacional, 20);
         if (nacional20 > 0) Calendar.Schedule(nacional20, DayEvent.Promocao);
 
-        // best/f.java:543-544: com os regionais ligados (ou a carreira completa, bc), a criação da
-        // Série D / Copa do Brasil ("cD") cai no primeiro dia Nacional, na fila de fim de dia.
-        if (State.Options.JogaRegionais)
+        // best/f.java:543-544: com os regionais ligados (X) ou a carreira completa (bc/bk), a criação
+        // da Série D / Copa do Brasil ("cD") cai no primeiro dia Nacional, na fila de fim de dia.
+        if (State.Options.JogaRegionais || SeasonBuilder.SerieDApplies(this))
         {
             var primeiroNacional = Calendar.FirstIndexOfType(DayType.Nacional);
             if (primeiroNacional > 0) Calendar.Schedule(primeiroNacional, DayEvent.CriaSerieDCopa);

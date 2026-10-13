@@ -18,9 +18,9 @@ namespace Brasfoot.Core.Season;
 /// <see cref="BuildCompetitions"/> a partir de <see cref="SeasonBuilder.CreateSupercupFromHistory"/>.
 /// </para>
 /// <para>
-/// As configurações <c>conf_estadual/*.ces</c> são injetadas no construtor (a sessão não as conhece);
-/// sem elas, as federações usam a fórmula padrão. A criação da Série D ainda não é portada — este
-/// gancho cria apenas a Copa do Brasil.
+/// As configurações <c>conf_estadual/*.ces</c> e <c>conf_ligas_nacionais/*.cfg</c> são injetadas no
+/// construtor (a sessão não as conhece); sem elas, as federações usam a fórmula padrão e a Série D usa
+/// o formato brasileiro padrão (8 grupos × 4 classificados).
 /// </para>
 /// </remarks>
 public sealed class FullSeasonHooks : SeasonHooks
@@ -31,15 +31,23 @@ public sealed class FullSeasonHooks : SeasonHooks
     public FullSeasonHooks(
         IReadOnlyDictionary<(int State, int Division), ConfigEstadualType>? stateConfigs = null,
         int countryId = Countries.Brasil,
-        bool useStandardGroup = true)
+        bool useStandardGroup = true,
+        ConfigLigaType? serieDConfig = null)
     {
         _stateConfigs = stateConfigs;
         CountryId = countryId;
         _useStandardGroup = useStandardGroup;
+        SerieDConfig = serieDConfig;
     }
 
     /// <summary>País cuja liga nacional é montada (default Brasil).</summary>
     public int CountryId { get; }
+
+    /// <summary>
+    /// Configuração <c>.cfg</c> da 4ª divisão (Série D) usada no gancho <c>cD</c> quando a carreira
+    /// brasileira é completa; sem ela, <see cref="SerieDFormat"/> usa o formato brasileiro padrão.
+    /// </summary>
+    public ConfigLigaType? SerieDConfig { get; }
 
     /// <summary>
     /// <c>best.f.ah()</c>: cria as divisões da liga nacional de <see cref="CountryId"/> e, no Brasil,
@@ -64,9 +72,9 @@ public sealed class FullSeasonHooks : SeasonHooks
                 session, $"{national.Name} — 1ª divisão", "Copa do Brasil");
     }
 
-    /// <summary><c>best.a.m()/l()</c> (<c>cD</c>): cria a Copa do Brasil no meio da temporada.</summary>
+    /// <summary><c>best.a.m()/l()</c> (<c>cD</c>): cria a Série D e a Copa do Brasil no meio da temporada.</summary>
     public override void CreateSerieDAndCopa(GameSession session) =>
-        SeasonBuilder.CreateSerieDAndCopa(session);
+        SeasonBuilder.CreateSerieDAndCopa(session, SerieDConfig);
 
     /// <summary><c>best.f.aa()</c>: arquiva os campeões do ano ao virar a temporada.</summary>
     public override void SeasonRollover(GameSession session) => SeasonArchive.Record(session);
