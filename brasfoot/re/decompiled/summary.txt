@@ -1,0 +1,9 @@
+Summary for /tmp/claude-1000/-home-davidmenezes-Documents-brasfoot/3d98070e-27d9-4678-b15c-56d197cd1a8c/scratchpad/brasfoot.jar
+Decompiled with CFR 0.152
+
+
+best.M
+----------------------------
+
+a(java.lang.String int int )
+  Unable to fully structure code

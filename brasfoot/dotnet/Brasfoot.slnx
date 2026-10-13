@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Brasfoot.Cli/Brasfoot.Cli.csproj" />
+    <Project Path="src/Brasfoot.Core/Brasfoot.Core.csproj" />
+    <Project Path="src/Brasfoot.Data/Brasfoot.Data.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Brasfoot.Tests/Brasfoot.Tests.csproj" />
+  </Folder>
+</Solution>

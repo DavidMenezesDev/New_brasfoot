@@ -1,0 +1,23 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package a;
+
+import a.ji;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+class jk
+implements ActionListener {
+    final /* synthetic */ ji Ns;
+
+    jk(ji ji2) {
+        this.Ns = ji2;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent actionEvent) {
+        this.Ns.qW();
+    }
+}
+

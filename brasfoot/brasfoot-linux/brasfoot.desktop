@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Brasfoot 22-23
+Comment=Gerenciador de futebol
+Exec="/home/davidmenezes/Documents/brasfoot/brasfoot-linux/brasfoot.sh"
+Path=/home/davidmenezes/Documents/brasfoot/brasfoot-linux
+Icon=/home/davidmenezes/Documents/brasfoot/brasfoot-linux/brasfoot.png
+Terminal=false
+Categories=Game;SportsGame;
