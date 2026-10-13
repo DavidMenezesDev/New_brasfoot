@@ -213,11 +213,23 @@ Princípios:
     de clubes brasileiros); `GameSession.BrasilCup` + `RecordCopaDoBrasilResults` integram ao laço de dias.
     CLI: `copadobrasil --temporada`. 7 testes novos em `tests/Brasfoot.Tests/CopaDoBrasilSchedulingTests.cs`.
     240 testes no total.
-  - **Falta:** plugar a Copa do Brasil ao gancho `cD` (`CreateSerieDAndCopa`) para nascer junto da Série D
-    em vez de por chamada explícita. O acesso/rebaixamento estadual calculado por
-    `SettlePromotionRelegation` ainda não é aplicado aos dados do mundo (a federação é reconstruída a
-    cada temporada) nem há histórico de campeões por competição/temporada (`ChampionRecord`) que
-    alimentaria automaticamente `Supercup.Create`.
+  - **Feito (ciclo da temporada):** (1) `cD` plugado ao laço de dias — `GameSession.SeedNationalTeamEvents`
+    agenda `DayEvent.CriaSerieDCopa` no primeiro dia Nacional (fila de fim de dia) quando os regionais
+    estão ligados (`best/f.java:543-544`; `DayEvents.QueueOf` corrigido para a fila 1, como no original) e
+    o `Dispatch` chama `Hooks.CreateSerieDAndCopa`. `SeasonBuilder.CreateSerieDAndCopa`
+    (`best.a.m()/l()`) cria a Copa do Brasil no meio da temporada; `Core/Season/FullSeasonHooks` é a
+    montagem concreta da temporada brasileira (4 divisões nacionais + estaduais + regionais + Copa do
+    Brasil via `cD` + arquivo de campeões). (2) histórico — `SeasonArchive` arquiva campeões **e vices**
+    por `(temporada, competição)` em `GameState.Champions` (`ChampionRecord` estendido com
+    `RunnerUpId`/`RunnerUpName`, idempotente, pula competições não encerradas e as 1ªs fases
+    estaduais/regionais); `SeasonBuilder.CreateSupercupFromHistory` monta a Supercopa da temporada
+    seguinte a partir desse histórico (com o fallback do vice da copa). 13 testes novos em
+    `tests/Brasfoot.Tests/SeasonLifecycleTests.cs`. 253 testes no total.
+  - **Falta:** a Série D propriamente dita (criação do elenco via `best.w.Q`, fase classificatória +
+    mata-mata), que `CreateSerieDAndCopa` hoje deixa de fora (só a Copa do Brasil). O acesso/rebaixamento
+    estadual calculado por `SettlePromotionRelegation` ainda não é aplicado aos dados do mundo (a
+    federação é reconstruída a cada temporada); `FullSeasonHooks` ainda não cria a Supercopa nem roda a
+    virada completa (evolução, finanças, mercado de técnicos).
 
 ### Fase 5 — Finanças e estádio (spec-financas §1)
 - `Ledger` por temporada com categorias; salários (mensal dia 2 ×4 ou semanal domingo, só em meses

@@ -219,13 +219,35 @@ dotnet run --project src/Brasfoot.Cli -- amistoso saopaulo_bra corinthians_bra
 dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
 ```
 
+## Ciclo da temporada: `cD` e histórico de campeões (Fase 4)
+
+- `DayEvent.CriaSerieDCopa` (`cD`) entra no laço de dias pelo gancho `SeasonHooks.CreateSerieDAndCopa`:
+  `GameSession.SeedNationalTeamEvents` agenda o evento no primeiro dia Nacional (fila de **fim de dia**,
+  como o `a.b(n2, 4, 1)` de `best/f.java:543-544`, condicionado aos regionais ligados) e o `Dispatch`
+  o encaminha ao hook. `SeasonBuilder.CreateSerieDAndCopa` (`best.a.m()/l()`) cria a Copa do Brasil a
+  partir do grupo de clubes brasileiros no meio da temporada.
+- `Core/Season/FullSeasonHooks`: a montagem concreta da temporada brasileira sobre `SeasonBuilder` —
+  divisões da liga nacional + estaduais + regionais em `BuildCompetitions`, a Copa do Brasil em
+  `CreateSerieDAndCopa` (nascendo no `cD`, não no início do ano) e o arquivo de campeões em
+  `SeasonRollover`. É a ponte para o front-end (Fase 10). A Série D propriamente dita (elenco via
+  `best.w.Q`) ainda não é criada.
+- `Core/Season/SeasonArchive` + `GameState.Champions`: arquiva campeões **e vices** de todas as
+  competições encerradas (`ChampionRecord` ganhou `RunnerUpId`/`RunnerUpName`), idempotente por
+  `(temporada, competição)`, pulando as 1ªs fases estaduais/regionais (que vivem em `session.Leagues`).
+  `SeasonBuilder.CreateSupercupFromHistory` usa esse histórico para montar a Supercopa da temporada
+  seguinte (campeão da liga × campeão da copa, com o vice da copa como fallback).
+- Testado em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs` (13 testes): agendamento/dispatch do `cD`,
+  arquivo de liga e de copa (campeão + vice), idempotência, `Find`, Supercopa a partir do histórico
+  (incluindo o fallback do vice) e uma temporada inteira sintética (96 clubes) jogada pelo
+  `FullSeasonHooks` até o arquivo dos campeões.
+
 ## Ainda não portado
 
-- Copa do Brasil: o driver (`CopaDoBrasilCompetition`) e a notificação `Bh` **foram portados** nesta
-  rodada (ver acima); falta plugá-lo ao gancho `cD` (`CreateSerieDAndCopa`) para nascer junto da Série D
-  em vez de por chamada explícita.
-- Histórico de campeões por temporada (`ChampionRecord`, tipo já existente em `GameState.Champions` mas
-  ainda não alimentado pelas competições) e persistência das divisões estaduais entre temporadas (a
+- Copa do Brasil: o driver (`CopaDoBrasilCompetition`), a notificação `Bh` e o gancho `cD`
+  (`CreateSerieDAndCopa`) **foram portados** (ver acima). Falta a Série D propriamente dita (elenco via
+  `best.w.Q`, fase classificatória + mata-mata), que `CreateSerieDAndCopa` hoje deixa de fora.
+- Histórico de campeões por temporada **foi portado** (`SeasonArchive` + `ChampionRecord` alimentado
+  pelas competições, ver acima). Falta ainda a persistência das divisões estaduais entre temporadas (a
   `StateFederation` reconstrói os quadros a partir dos clubes a cada ano; o acesso/rebaixamento calculado
   não é aplicado aos dados do mundo ainda).
 - Mata-mata: o wrapper `f.B`/`f.z` como objeto coeso (`fc(1802/1803/90)`, hand-off do código 1020) —

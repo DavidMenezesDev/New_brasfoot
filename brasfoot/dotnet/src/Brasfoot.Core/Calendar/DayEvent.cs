@@ -24,8 +24,9 @@ public static class DayEvents
     /// <summary>Fila em que o evento é agendado (<c>queue</c>): 0 = pós-jogo, 1 = fim do dia.</summary>
     public static int QueueOf(DayEvent e) => e switch
     {
-        DayEvent.ConvocacaoSelecao or DayEvent.ConvocacaoTodasSelecoes or
-            DayEvent.ConvocacaoForcada or DayEvent.Promocao => 1,
+        DayEvent.CriaSerieDCopa or DayEvent.ConvocacaoSelecao or
+            DayEvent.ConvocacaoTodasSelecoes or DayEvent.ConvocacaoForcada or
+            DayEvent.Promocao => 1,
         _ => 0,
     };
 

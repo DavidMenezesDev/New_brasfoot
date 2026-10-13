@@ -134,6 +134,53 @@ public static class SeasonBuilder
         return copa;
     }
 
+    /// <summary>
+    /// <c>best.a.m()/l()</c> (<c>best/a.java:649-700</c>): cria a Copa do Brasil a partir de um grupo,
+    /// no gancho <c>cD</c> do meio da temporada. A parte da Série D (elenco via <c>best.w.Q</c>) ainda
+    /// não foi portada — esta versão cria só a copa. Devolve <see langword="null"/> quando o grupo não
+    /// comporta o formato de potes.
+    /// </summary>
+    public static CopaDoBrasilCompetition? CreateSerieDAndCopa(GameSession session, IReadOnlyList<Team>? pool = null)
+    {
+        var brazilian = session.State.World.LeagueOf(Countries.Brasil);
+        var field = pool ?? (brazilian is not null
+            ? brazilian.Teams.ToList()
+            : session.State.World.Teams.Where(t => t.CountryId == Countries.Brasil).ToList());
+        return CreateCopaDoBrasil(session, field);
+    }
+
+    /// <summary>
+    /// Cria a Supercopa da temporada corrente a partir do histórico de campeões da temporada anterior
+    /// (<see cref="SeasonArchive"/>): o campeão da liga (divisão 1) de <paramref name="leagueCompetitionName"/>
+    /// contra o campeão da copa de <paramref name="cupCompetitionName"/>, com o vice da copa como
+    /// alternativa (<see cref="Supercup.SelectOpponent"/>). Devolve <see langword="null"/> quando não há
+    /// histórico (primeira temporada) ou adversário válido.
+    /// </summary>
+    public static CupCompetition? CreateSupercupFromHistory(
+        GameSession session,
+        string leagueCompetitionName,
+        string cupCompetitionName,
+        string name = "Supercopa")
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        var previous = session.State.Season - 1;
+        if (previous < 1) return null;
+
+        var leagueRecord = SeasonArchive.Find(session.State, previous, leagueCompetitionName);
+        if (leagueRecord is null) return null;
+        var leagueChampion = FindTeam(session, leagueRecord.TeamId);
+        if (leagueChampion is null) return null;
+
+        var cupRecord = SeasonArchive.Find(session.State, previous, cupCompetitionName);
+        var cupChampion = cupRecord is null ? null : FindTeam(session, cupRecord.TeamId);
+        var cupRunnerUp = cupRecord?.RunnerUpId is { } runnerUpId ? FindTeam(session, runnerUpId) : null;
+
+        return CreateSupercup(session, leagueChampion, cupChampion, cupRunnerUp, name);
+    }
+
+    private static Team? FindTeam(GameSession session, int teamId) =>
+        session.State.World.Teams.FirstOrDefault(t => t.Id == teamId);
+
     // ---- Estaduais e regionais (best.w / f.F) -------------------------------
 
     /// <summary>

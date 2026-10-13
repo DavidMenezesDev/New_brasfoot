@@ -78,8 +78,14 @@ public sealed class GameState
     }
 }
 
-/// <summary>Registro de campeão para o histórico (<c>at.mn()</c>).</summary>
-public sealed record ChampionRecord(int Season, string Competition, int TeamId, string TeamName);
+/// <summary>
+/// Registro de campeão para o histórico (<c>at.mn()</c>). <see cref="RunnerUpId"/>/<c>RunnerUpName</c>
+/// são preenchidos nas competições eliminatórias (vice da final) e alimentam a Supercopa do ano
+/// seguinte quando o campeão da liga coincide com o da copa (<c>Supercup.SelectOpponent</c>).
+/// </summary>
+public sealed record ChampionRecord(
+    int Season, string Competition, int TeamId, string TeamName,
+    int? RunnerUpId = null, string? RunnerUpName = null);
 
 /// <summary>Registro de troca ou demissão de técnico.</summary>
 public sealed record ManagerChangeRecord(DateOnly Date, string Club, string? Outgoing, string Incoming, string Reason);
