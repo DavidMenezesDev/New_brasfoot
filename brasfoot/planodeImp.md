@@ -204,11 +204,17 @@ Princípios:
     em jogo único, "Torneio Amistoso"/Juazeiro). `GameSession.Phased`/`StateFederations` + `RecordPhasedResults`
     integram ao laço de dias. CLI: `estadual [--estado SP]`, `regionais`, `amistoso <c> <a>`,
     `amistoso torneio`. 27 testes novos em `tests/Brasfoot.Tests/StateChampionshipTests.cs`. 233 testes no total.
-  - **Falta:** a Copa do Brasil (`CopaDoBrasil.Play`) continua jogada de uma vez só, não integrada ao
-    `CupCompetition`: suas fases reordenam os vencedores por força entre uma fase e outra
-    (`SecondStage`/`ThirdStage`/`LaterStage`), incompatível com o avanço automático de
-    `KnockoutBracket.ResolveRound` — precisaria de um driver dedicado que ainda não foi escrito. A
-    notificação `Bh` ainda não foi portada. O acesso/rebaixamento estadual calculado por
+  - **Feito (Copa do Brasil):** o driver dedicado `Core/Competitions/CopaDoBrasilCompetition` (`f/f` +
+    `f/f.ad..av`, `f/f.java:82-282`) agenda as sete fases (80→40→+12 cabeças→32→16→8→4→2) nos dias
+    livres de Copa Nacional (12: uma perna por fase de jogo único e duas nas de ida e volta), resolve
+    cada fase com o código da fase no desempate (a 1ª, 2129, avança o visitante) e reordena os
+    vencedores por força entre elas (`SecondStage`/`ThirdStage`/`LaterStage`). `SeasonBuilder.CreateCopaDoBrasil`
+    cria/agenda e porta a notificação `Bh` (`BuildHeadsMessage`/`NotifyHeads`, mensagem 23/75 aos técnicos
+    de clubes brasileiros); `GameSession.BrasilCup` + `RecordCopaDoBrasilResults` integram ao laço de dias.
+    CLI: `copadobrasil --temporada`. 7 testes novos em `tests/Brasfoot.Tests/CopaDoBrasilSchedulingTests.cs`.
+    240 testes no total.
+  - **Falta:** plugar a Copa do Brasil ao gancho `cD` (`CreateSerieDAndCopa`) para nascer junto da Série D
+    em vez de por chamada explícita. O acesso/rebaixamento estadual calculado por
     `SettlePromotionRelegation` ainda não é aplicado aos dados do mundo (a federação é reconstruída a
     cada temporada) nem há histórico de campeões por competição/temporada (`ChampionRecord`) que
     alimentaria automaticamente `Supercup.Create`.

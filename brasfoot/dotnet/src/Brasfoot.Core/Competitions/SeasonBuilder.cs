@@ -114,6 +114,26 @@ public static class SeasonBuilder
         return cup;
     }
 
+    /// <summary>
+    /// Cria a Copa do Brasil no novo formato de potes (<see cref="CopaDoBrasilCompetition"/>, <c>f/f</c>)
+    /// e a agenda nos dias livres de <see cref="DayType.CopaNacional"/>. Devolve <see langword="null"/>
+    /// quando o grupo não comporta o formato de potes (o chamador cai no sorteio genérico de
+    /// <see cref="CupDraw"/>).
+    /// </summary>
+    public static CopaDoBrasilCompetition? CreateCopaDoBrasil(
+        GameSession session,
+        IReadOnlyList<Team> pool,
+        IReadOnlyList<Team>? preferred = null,
+        string name = "Copa do Brasil")
+    {
+        var competition = new Competition(2029, name, CompetitionType.CopaNacional);
+        var copa = CopaDoBrasilCompetition.Create(competition, pool, session.State.Calendar, session.Context, preferred);
+        if (copa is null) return null;
+        copa.NotifyHeads(session.State); // f.b → Bh(): avisa os técnicos brasileiros dos 12 cabeças.
+        session.BrasilCup.Add(copa);
+        return copa;
+    }
+
     // ---- Estaduais e regionais (best.w / f.F) -------------------------------
 
     /// <summary>

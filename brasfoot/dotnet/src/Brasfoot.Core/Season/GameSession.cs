@@ -51,6 +51,12 @@ public sealed class GameSession
     public List<PhasedCompetition> Phased { get; } = new();
 
     /// <summary>
+    /// Copas do Brasil agendadas na temporada (Fase 4, <see cref="Competitions.CopaDoBrasilCompetition"/>):
+    /// formato de potes com reordenação por força entre fases, que <see cref="Cups"/> não cobre.
+    /// </summary>
+    public List<CopaDoBrasilCompetition> BrasilCup { get; } = new();
+
+    /// <summary>
     /// Federações estaduais ativas da temporada (<c>best.w</c>), criadas por
     /// <see cref="Competitions.SeasonBuilder.CreateStateChampionships"/>. Guardam as divisões para a
     /// liquidação de acesso/rebaixamento no fim da temporada.
@@ -178,6 +184,7 @@ public sealed class GameSession
         RecordLeagueResults();
         RecordCupResults();
         RecordPhasedResults();
+        RecordCopaDoBrasilResults();
         Hooks.AdvanceCompetitions(this, CurrentDay);
         DispatchQueue(afterMatch: true);
         Ax();
@@ -217,6 +224,19 @@ public sealed class GameSession
         {
             phased.RecordResults(CurrentDay);
             phased.AdvanceAfterDay(Calendar, Context);
+        }
+    }
+
+    /// <summary>
+    /// Contabiliza e avança as Copas do Brasil (<see cref="CopaDoBrasilCompetition"/>): análogo a
+    /// <see cref="RecordCupResults"/>, mas com a reordenação por força entre as fases.
+    /// </summary>
+    public void RecordCopaDoBrasilResults()
+    {
+        foreach (var copa in BrasilCup)
+        {
+            copa.RecordResults(CurrentDay);
+            copa.AdvanceAfterDay(Calendar, Context);
         }
     }
 

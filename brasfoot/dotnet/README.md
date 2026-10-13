@@ -94,14 +94,23 @@ dotnet run --project src/Brasfoot.Cli -- calendario --ano 2022   # calendário c
 - `Core/Competitions/CopaDoBrasil`: Copa do Brasil novo formato (`f/f.b` + `f/f.ad..av`) — 8 potes
   sequenciais de 10 intercalados em `[4,0,7,3,5,1,6,2]`, 12 cabeças (`SelectExcluded`) entrando na 3ª
   fase e reordenação por força (`h.a.abm`: nível → reputação → desempate) nas fases 2129..2729.
-  `Play` roda a competição inteira (`KnockoutBracket.PlaySingleRound` joga fases de 80/40 clubes, que
-  não são potência de dois). O CLI `copadobrasil` usa esse formato.
+  `Play` roda a competição inteira de uma vez (`KnockoutBracket.PlaySingleRound` joga fases de 80/40
+  clubes, que não são potência de dois); o CLI `copadobrasil` usa esse formato.
+- `Core/Competitions/CopaDoBrasilCompetition` (Fase 4): o driver dedicado que agenda a Copa do Brasil
+  no laço de dias (`f/f` com `f/f.ad..av`, `f/f.java:82-282`) — reserva `RequiredDaySlots()` (12) dias
+  livres de Copa Nacional, joga uma fase por vez (`AdvanceAfterDay`: cria a volta nas fases de ida e
+  volta, resolve com o código da fase no desempate — a 1ª, 2129, avança o visitante — e reordena os
+  vencedores por força antes de montar a fase seguinte). `SeasonBuilder.CreateCopaDoBrasil` cria/agenda
+  e porta a notificação `Bh` (`BuildHeadsMessage`/`NotifyHeads`: mensagem 23/75 aos técnicos de clubes
+  brasileiros); `GameSession.BrasilCup` + `RecordCopaDoBrasilResults` integram ao laço de dias. CLI:
+  `copadobrasil --temporada`. Testado em `tests/Brasfoot.Tests/CopaDoBrasilSchedulingTests.cs`.
 - `Core/Competitions/CupCompetition` (Fase 4): agenda um `KnockoutBracket` nos dias livres do tipo da
   competição, uma perna por dia (em vez de `PlayAll` de uma vez), análogo a `LeagueCompetition` para
   mata-matas soltos — `GameSession.Cups` guarda as instâncias, contabilizadas e avançadas a cada dia
   por `GameSession.RecordCupResults` (cria a volta da fase corrente quando a ida termina, ou resolve e
   agenda a fase seguinte). Reserva `RequiredDaySlots` dias livres do tipo (uma por perna) na criação.
-  Não serve para a Copa do Brasil (ver abaixo).
+  A Copa do Brasil, que reordena os vencedores entre fases, usa o driver dedicado
+  `CopaDoBrasilCompetition` (ver acima).
 - `Core/Competitions/Supercup` (Fase 4, `f.I`): jogo único entre o campeão da liga (1ª divisão) e o
   campeão da copa nacional da temporada anterior, com fallback para o vice da copa quando os dois
   títulos coincidiram no mesmo clube (`f/I.Ab()`, verificado linha a linha). `SelectOpponent` é puro;
@@ -212,14 +221,13 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
 
 ## Ainda não portado
 
-- Copa do Brasil (`CopaDoBrasil`): ainda jogada de uma vez (`Play`), não integrada ao agendamento de
-  `CupCompetition` — suas fases reordenam os vencedores por força entre uma fase e outra
-  (`SecondStage`/`ThirdStage`/`LaterStage`), incompatível com o avanço automático de
-  `KnockoutBracket.ResolveRound`; precisaria de um driver dedicado.
-- Notificação `Bh` de resultados ao técnico humano, histórico de campeões por temporada
-  (`ChampionRecord`) alimentado pelas competições e persistência das divisões estaduais entre temporadas
-  (a `StateFederation` reconstrói os quadros a partir dos clubes a cada ano; o acesso/rebaixamento
-  calculado não é aplicado aos dados do mundo ainda).
+- Copa do Brasil: o driver (`CopaDoBrasilCompetition`) e a notificação `Bh` **foram portados** nesta
+  rodada (ver acima); falta plugá-lo ao gancho `cD` (`CreateSerieDAndCopa`) para nascer junto da Série D
+  em vez de por chamada explícita.
+- Histórico de campeões por temporada (`ChampionRecord`, tipo já existente em `GameState.Champions` mas
+  ainda não alimentado pelas competições) e persistência das divisões estaduais entre temporadas (a
+  `StateFederation` reconstrói os quadros a partir dos clubes a cada ano; o acesso/rebaixamento calculado
+  não é aplicado aos dados do mundo ainda).
 - Mata-mata: o wrapper `f.B`/`f.z` como objeto coeso (`fc(1802/1803/90)`, hand-off do código 1020) —
   os novos `PromotionRelegation` e `BracketSeeder.DetermineGroupKnockoutSeeding` são chamados
   explicitamente por quem monta a temporada, não são métodos de um `f.B`/`f.s` portado (spec §3.7).

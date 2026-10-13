@@ -233,8 +233,44 @@ switch (positional[0])
         var country = options.TryGetValue("pais", out var cpb) ? int.Parse(cpb) : Countries.Brasil;
         var league = world.LeagueOf(country);
         var pool = league is null ? world.Teams.ToList() : league.Teams.ToList();
-        var competition = new Competition(2029, "Copa do Brasil", CompetitionType.CopaNacional);
 
+        if (options.ContainsKey("temporada"))
+        {
+            var state = GameState.FromWorld(world, new GameOptions());
+            if (options.TryGetValue("ano", out var cby)) state.BaseYear = int.Parse(cby);
+            var session = new GameSession(state, ctx);
+            session.BuildSeasonCalendar();
+
+            var cup = SeasonBuilder.CreateCopaDoBrasil(session, pool);
+            if (cup is null)
+            {
+                Console.WriteLine($"Grupo de {pool.Count} clubes não comporta o formato de potes; use `copa`.");
+                return 1;
+            }
+            Console.WriteLine($"Copa do Brasil {session.Year} — {pool.Count} clubes, {cup.Heads.Count} cabeças, {CopaDoBrasilCompetition.RequiredDaySlots()} dias");
+            Console.WriteLine($"Cabeças: {string.Join(", ", cup.Heads.Select(h => h.Name))}");
+
+            while (!session.SeasonEnded && !cup.IsComplete)
+            {
+                var playingDay = session.CurrentDay;
+                var stageBefore = cup.Stage;
+                session.AdvanceToNextMatchDay();
+                var played = playingDay.Matches
+                    .Where(m => ReferenceEquals(m.Competition, cup.Competition)).ToList();
+                if (played.Count == 0) continue;
+                var legs = CopaDoBrasilCompetition.TwoLeggedAt(stageBefore) ? "ida e volta" : "jogo único";
+                Console.WriteLine();
+                Console.WriteLine($"{playingDay.Date:dd/MM} — fase {stageBefore + 1} ({CopaDoBrasil.StageCodes[stageBefore]}), {legs}");
+                foreach (var m in played)
+                    Console.WriteLine($"  {m.Home.Name} {m.Score[0]} x {m.Score[1]} {m.Away.Name}");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine($"Campeão: {cup.Champion?.Name ?? "(não decidido)"}");
+            return 0;
+        }
+
+        var competition = new Competition(2029, "Copa do Brasil", CompetitionType.CopaNacional);
         var champion = CopaDoBrasil.Play(competition, pool, ctx);
         if (champion is null)
         {
@@ -463,7 +499,7 @@ static void PrintUsage()
           rodada                               Joga uma rodada da Série A
           temporada                            Joga a temporada da liga (--pais 1 --divisao 1 --jornadas N)
           copa [--times 8] [--ida-e-volta]     Joga um mata-mata entre clubes da divisão
-          copadobrasil [--pais 1]              Joga a Copa do Brasil (formato de 8 potes de 10)
+          copadobrasil [--pais 1] [--temporada]  Copa do Brasil (formato de 8 potes; --temporada agenda no laço de dias)
           estadual [--estado SP] [--ano A]     Joga o campeonato estadual de um estado
           regionais [--ano A]                  Joga os torneios regionais (Rio-SP, Sul-Minas, ...)
           amistoso <time> <adversario>         Convite e amistoso entre dois clubes (--adversario-manda)

@@ -17,7 +17,8 @@ namespace Brasfoot.Core.Competitions;
 /// </para>
 /// <para>
 /// A ida-e-volta por fase (<c>boolean[]</c> = <c>f.z.ZK</c>) é decidida pela competição; este sorteio
-/// só produz a ordem. O formato de potes da Copa do Brasil 2029 (<c>f/f.b</c>) ainda não é portado.
+/// só produz a ordem. O formato de potes da Copa do Brasil 2029 (<c>f/f.b</c>) é portado em
+/// <see cref="CopaDoBrasil"/>; quando o grupo não comporta esse formato, o chamador cai aqui.
 /// </para>
 /// </remarks>
 public static class CupDraw

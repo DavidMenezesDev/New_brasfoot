@@ -17,8 +17,9 @@ namespace Brasfoot.Core.Competitions;
 /// fase (<see cref="RequiredDaySlots"/>) — e os consome em ordem conforme as fases avançam
 /// (<see cref="AdvanceAfterDay"/>). Isso replica o agendamento de <c>f.s.a()</c> (<c>f/s.java:672-688</c>)
 /// para os mata-matas que, no original, moram dentro de um <c>f.z</c> solto (copa nacional, Supercopa)
-/// em vez de um <c>f.s</c> com rodadas. Não serve para a Copa do Brasil (<see cref="CopaDoBrasil"/>),
-/// cujas fases reordenam os vencedores por força entre uma fase e outra.
+/// em vez de um <c>f.s</c> com rodadas. A Copa do Brasil (<see cref="CopaDoBrasil"/>), cujas fases
+/// reordenam os vencedores por força entre uma fase e outra, tem o driver dedicado
+/// <see cref="CopaDoBrasilCompetition"/>.
 /// </remarks>
 public sealed class CupCompetition
 {
