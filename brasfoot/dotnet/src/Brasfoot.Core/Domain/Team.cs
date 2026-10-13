@@ -23,6 +23,14 @@ public sealed class Team
     /// <summary>Divisão (1 = elite); 0 para clubes fora de uma liga simulada.</summary>
     public int Division { get; set; }
 
+    /// <summary>
+    /// Divisão do campeonato estadual (1..4); 0 = fora das divisões. No original
+    /// (<c>best.w.dY()</c>) o estadual é remontado por nível a cada temporada e o acesso/rebaixamento
+    /// de <c>best.w.ee()</c> se perde; com <c>RulesOptions.FixOriginalBugs</c> o port persiste a
+    /// divisão aqui e <c>StateFederation.Build</c> a respeita.
+    /// </summary>
+    public int StateDivision { get; set; }
+
     /// <summary>Clube de uma liga nacional simulada (<c>ah.kn()</c>), em oposição aos "clubes de reputação".</summary>
     public bool IsLeagueClub { get; set; }
 

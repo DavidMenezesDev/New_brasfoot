@@ -96,9 +96,16 @@ public sealed record StatePromotionResult(
 /// ordem de nível. O que sobra vai para <see cref="Leftovers"/> (<c>dt</c>).
 /// </para>
 /// <para>
+/// Com <c>RulesOptions.FixOriginalBugs</c> ligado, a divisão persistida em <c>Team.StateDivision</c>
+/// domina o nível na ordenação: é a melhoria que faz o acesso/rebaixamento de
+/// <see cref="SettlePromotionRelegation"/> valer na temporada seguinte (o original remonta tudo por
+/// nível e o perde). Desligado, a montagem é a do original.
+/// </para>
+/// <para>
 /// <c>best.w.ee()</c> (<see cref="SettlePromotionRelegation"/>): troca os rebaixados de cada divisão
 /// pelos melhores candidatos (<c>yW</c>) da divisão de baixo; a última divisão troca com os clubes
 /// fora da liga. A troca só acontece quando as duas listas têm o mesmo tamanho, como no original.
+/// Atualiza <c>Team.StateDivision</c> para a temporada seguinte.
 /// </para>
 /// </remarks>
 public sealed class StateFederation
@@ -138,11 +145,22 @@ public sealed class StateFederation
         ArgumentNullException.ThrowIfNull(session);
         var federation = new StateFederation(stateId);
 
-        var pool = session.State.World.Teams
+        // Sem FixOriginalBugs a montagem é a do original (só por nível). Com a correção, a divisão
+        // persistida em Team.StateDivision domina o nível, para o acesso/rebaixamento de
+        // SettlePromotionRelegation valer na temporada seguinte.
+        var persistent = session.Context.Options.FixOriginalBugs;
+        var ordered = session.State.World.Teams
             .Where(t => t.CountryId == Countries.Brasil && t.State == stateId)
             .OrderByDescending(t => t.Level)
             .ThenByDescending(t => t.RankTiebreak)
             .ToList();
+        var pool = persistent
+            ? ordered
+                .OrderBy(t => t.StateDivision <= 0 ? int.MaxValue : t.StateDivision)
+                .ThenByDescending(t => t.Level)
+                .ThenByDescending(t => t.RankTiebreak)
+                .ToList()
+            : ordered;
         if (pool.Count < 6) return federation;
 
         var initialCount = pool.Count;
@@ -199,6 +217,7 @@ public sealed class StateFederation
             }
 
             foreach (var team in participants) pool.Remove(team);
+            foreach (var team in participants) team.StateDivision = division;
 
             var name = division == 1
                 ? federation.Demonym
@@ -225,6 +244,7 @@ public sealed class StateFederation
         }
 
         federation.Leftovers.AddRange(pool);
+        foreach (var team in pool) team.StateDivision = 0;
         return federation;
     }
 
@@ -246,7 +266,8 @@ public sealed class StateFederation
     /// <c>best.w.ee()</c>: liquida acesso/rebaixamento. Para cada divisão (menos a última), troca os
     /// <c>nRebaixados</c> últimos pelos melhores candidatos da divisão de baixo, quando as contagens
     /// batem; a última divisão troca com <see cref="Leftovers"/>. Atualiza os <see cref="StateDivision.Roster"/>
-    /// em memória e devolve as movimentações para o chamador persistir/historiar.
+    /// em memória e <c>Team.StateDivision</c> (a divisão da próxima temporada, quando
+    /// <c>FixOriginalBugs</c> está ligado) e devolve as movimentações para o chamador persistir/historiar.
     /// </summary>
     public StatePromotionResult SettlePromotionRelegation()
     {
@@ -274,12 +295,14 @@ public sealed class StateFederation
                 {
                     _divisions[i].Roster.Remove(team);
                     _divisions[i + 1].Roster.Add(team);
+                    team.StateDivision = i + 2;
                     movements.Add((i + 1, i + 2, team));
                 }
                 foreach (var team in up)
                 {
                     _divisions[i + 1].Roster.Remove(team);
                     _divisions[i].Roster.Add(team);
+                    team.StateDivision = i + 1;
                     movements.Add((i + 2, i + 1, team));
                 }
             }
@@ -296,12 +319,14 @@ public sealed class StateFederation
                 {
                     _divisions[i].Roster.Remove(team);
                     Leftovers.Add(team);
+                    team.StateDivision = 0;
                     movements.Add((i + 1, 0, team));
                 }
                 foreach (var team in up)
                 {
                     Leftovers.Remove(team);
                     _divisions[i].Roster.Add(team);
+                    team.StateDivision = i + 1;
                     movements.Add((0, i + 1, team));
                 }
             }

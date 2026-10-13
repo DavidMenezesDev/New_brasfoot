@@ -199,7 +199,10 @@ dotnet run --project src/Brasfoot.Cli -- copadobrasil
   partir dos clubes brasileiros daquele estado (ordem de nível/desempate, `w.dY`), com fallback para a
   fórmula padrão 0 quando não há `.ces` ou a fórmula pede mais clubes que o pool, o grupo padrão paulista
   (`w.z`) e a liquidação de acesso/rebaixamento (`w.ee`) em `SettlePromotionRelegation`
-  (`yW`/`yU`: candidatos a subir pela chave e rebaixados pelo fundo da tabela).
+  (`yW`/`yU`: candidatos a subir pela chave e rebaixados pelo fundo da tabela). Com
+  `RulesOptions.FixOriginalBugs`, a divisão persistida em `Team.StateDivision` domina o nível na
+  montagem e `SettlePromotionRelegation` a grava — assim o acesso/rebaixamento vale na temporada
+  seguinte (o original remonta tudo por nível e o perde).
 - `Core/Competitions/SerieDSelection`: a seleção da Série D (`best.w.Q`) e os extras da Copa (`best.w.eh`)
   — clubes livres, 19 passagens pelos grupos de estados `sb..sf` (`w.a`), preenchimento por `Z.jg()`,
   corte e as ordenações por `jW`/`jX` (`ah`); `FromFederations` monta os slots de estado (`a.SR.bx()`) a
@@ -241,9 +244,9 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
 - `Core/Season/FullSeasonHooks`: a montagem concreta da temporada brasileira sobre `SeasonBuilder` —
   divisões da liga nacional + estaduais + regionais em `BuildCompetitions`, a Série D e a Copa do Brasil
   em `CreateSerieDAndCopa` (nascendo no `cD`, não no início do ano), a Supercopa em `BuildCompetitions`
-  (a partir do histórico da temporada anterior, `CreateSupercupFromHistory`) e o arquivo de campeões em
-  `SeasonRollover`. Recebe as configs `.ces` (estaduais) e `.cfg` da 4ª divisão (Série D). É a ponte para
-  o front-end (Fase 10).
+  (a partir do histórico da temporada anterior, `CreateSupercupFromHistory`) e, em `SeasonRollover`, a
+  liquidação do acesso/rebaixamento estadual (sob `FixOriginalBugs`) mais o arquivo de campeões. Recebe
+  as configs `.ces` (estaduais) e `.cfg` da 4ª divisão (Série D). É a ponte para o front-end (Fase 10).
 - `GameSession.StartNextSeason`: versão mínima da virada de `best.f.al()` — garante a virada
   (`SeasonRollover` uma vez por temporada), avança `GameState.Season`, descarta as competições do ano
   (`Leagues`/`Cups`/`BrasilCup`/`Phased`/`StateFederations`) e remonta o calendário; as competições do
@@ -268,9 +271,8 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
 - Histórico de campeões por temporada **foi portado** (`SeasonArchive` + `ChampionRecord` alimentado
   pelas competições) e a Supercopa da temporada nasce dele (`SeasonBuilder.CreateSupercupFromHistory`
   via `FullSeasonHooks`); a virada da temporada (`GameSession.StartNextSeason`) **foi portada** na versão
-  mínima. Falta ainda a persistência das divisões estaduais entre temporadas (a
-  `StateFederation` reconstrói os quadros pelo nível a cada ano, como o original; o acesso/rebaixamento
-  calculado por `SettlePromotionRelegation` não é aplicado aos dados do mundo) e a virada completa
+  mínima, e o acesso/rebaixamento estadual agora é **persistido** em `Team.StateDivision` por
+  `FullSeasonHooks.SeasonRollover` (sob `FixOriginalBugs`). Falta a virada completa
   (evolução semanal, finanças, mercado de técnicos).
 - Mata-mata: o wrapper `f.B`/`f.z` como objeto coeso (`fc(1802/1803/90)`, hand-off do código 1020) —
   os novos `PromotionRelegation` e `BracketSeeder.DetermineGroupKnockoutSeeding` são chamados

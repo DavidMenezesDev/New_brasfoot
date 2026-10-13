@@ -76,6 +76,17 @@ public sealed class FullSeasonHooks : SeasonHooks
     public override void CreateSerieDAndCopa(GameSession session) =>
         SeasonBuilder.CreateSerieDAndCopa(session, SerieDConfig);
 
-    /// <summary><c>best.f.aa()</c>: arquiva os campeões do ano ao virar a temporada.</summary>
-    public override void SeasonRollover(GameSession session) => SeasonArchive.Record(session);
+    /// <summary>
+    /// <c>best.f.aa()</c>: ao virar a temporada, liquida o acesso/rebaixamento dos estaduais
+    /// (<c>best.w.ee()</c>) — com <c>FixOriginalBugs</c>, persistindo a divisão em
+    /// <c>Team.StateDivision</c> para a próxima temporada, o que o original não faz — e arquiva os
+    /// campeões do ano.
+    /// </summary>
+    public override void SeasonRollover(GameSession session)
+    {
+        if (session.Context.Options.FixOriginalBugs)
+            foreach (var federation in session.StateFederations)
+                federation.SettlePromotionRelegation();
+        SeasonArchive.Record(session);
+    }
 }

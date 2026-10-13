@@ -308,6 +308,50 @@ public class StateChampionshipTests
         }
     }
 
+    [Fact]
+    public void Federation_persists_promotion_and_relegation_across_seasons()
+    {
+        var teams = Enumerable.Range(0, 20)
+            .Select(i => Brazilian($"SP {i:D2}", Sp, level: 10 + i))
+            .ToList();
+        var world = WorldOf(teams);
+        var session = new GameSession(
+            GameState.FromWorld(world, new GameOptions()), TestData.Context(1, fix: true));
+        session.BuildSeasonCalendar();
+
+        var federation = StateFederation.Build(session, Sp);
+        PlayUntil(session, () => federation.Divisions.All(d => d.Phased.IsComplete));
+        Assert.Equal(3, federation.Divisions.Count);
+
+        var result = federation.SettlePromotionRelegation();
+
+        // A divisão persistida de cada clube que se moveu aponta para o destino.
+        foreach (var (_, to, team) in result.Movements)
+            Assert.Equal(to, team.StateDivision);
+
+        // Temporada seguinte: novo calendário e remontagem a partir da divisão persistida (não do nível).
+        var next = new GameSession(
+            GameState.FromWorld(world, new GameOptions()), TestData.Context(2, fix: true));
+        next.BuildSeasonCalendar();
+        var rebuilt = StateFederation.Build(next, Sp);
+
+        Assert.Equal(3, rebuilt.Divisions.Count);
+        for (var i = 0; i < federation.Divisions.Count; i++)
+            Assert.Equal(
+                federation.Divisions[i].Roster.Select(t => t.Id).OrderBy(id => id),
+                rebuilt.Divisions[i].Roster.Select(t => t.Id).OrderBy(id => id));
+
+        Assert.All(federation.Divisions, d => Assert.All(d.Roster, t => Assert.Equal(d.Division, t.StateDivision)));
+        Assert.All(federation.Leftovers, t => Assert.Equal(0, t.StateDivision));
+    }
+
+    private static World WorldOf(IEnumerable<Team> teams)
+    {
+        var world = new World();
+        world.Teams.AddRange(teams);
+        return world;
+    }
+
     // ---- Regional (f.F.an) ---------------------------------------------------
 
     [Fact]

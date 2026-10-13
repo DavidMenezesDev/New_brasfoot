@@ -352,6 +352,32 @@ public class SeasonLifecycleTests
         Assert.DoesNotContain(serieD.Pool, t => top.Contains(t));
     }
 
+    // ---- Acesso/rebaixamento estadual persistido (melhoria) -------------------
+
+    [Fact]
+    public void SeasonRollover_settles_state_promotion_and_relegation_when_fixing_bugs()
+    {
+        var world = BuildBrazilianWorld();
+        var state = GameState.FromWorld(world, new GameOptions());
+        state.BaseYear = 2022;
+        var session = new GameSession(state, TestData.Context(fix: true), new FullSeasonHooks());
+        session.BuildSeasonCalendar();
+
+        PlayWholeSeason(session);
+        session.AdvanceToNextMatchDay(); // arquiva os campeões e liquida o acesso/rebaixamento
+
+        // Algum clube do estadual ficou com divisão persistida.
+        Assert.Contains(state.World.Teams, t => t.StateDivision > 0);
+
+        session.StartNextSeason();
+
+        // A temporada 2 remonta cada divisão a partir de Team.StateDivision (não do nível).
+        foreach (var federation in session.StateFederations)
+            foreach (var division in federation.Divisions)
+                Assert.All(division.Roster, t => Assert.Equal(division.Division, t.StateDivision));
+        Assert.Contains(session.StateFederations.SelectMany(f => f.Leftovers), t => t.StateDivision == 0);
+    }
+
     // ---- Virada de temporada (GameSession.StartNextSeason) -------------------
 
     private static void PlayWholeSeason(GameSession session)

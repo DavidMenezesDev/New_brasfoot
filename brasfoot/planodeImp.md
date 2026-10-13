@@ -242,9 +242,15 @@ Princípios:
     `FullSeasonHooks` recebe a config `.cfg` da 4ª divisão (default brasileiro 8×4). 20 testes de
     `SerieDSelection` (`tests/Brasfoot.Tests/SerieDTests.cs`) + 1 de criação da Série D; verificado
     com os dados reais (brasfoot-linux: 64 clubes, 8 grupos de 8). 277 testes no total.
-  - **Falta:** o acesso/rebaixamento estadual calculado por `SettlePromotionRelegation` ainda não é
-    aplicado aos dados do mundo (a federação é reconstruída pelo nível a cada temporada, como no
-    original). Os clubes livres (`bY()`) da Série D ainda não têm equivalente (a 1ª etapa de `Q` entra
+  - **Feito (acesso/rebaixamento estadual persistido):** `SettlePromotionRelegation` (<c>best.w.ee()</c>)
+    agora é chamado na virada de temporada (`FullSeasonHooks.SeasonRollover`, antes de arquivar os
+    campeões) e grava a divisão de destino em `Team.StateDivision`; `StateFederation.Build` passa a
+    respeitá-la (a divisão persistida domina o nível), tudo sob `RulesOptions.FixOriginalBugs`. É a
+    melhoria sobre o original, que remonta o estadual por nível a cada ano e perde o acesso/rebaixamento.
+    Testes: `Federation_persists_promotion_and_relegation_across_seasons` (direto) e
+    `SeasonRollover_settles_state_promotion_and_relegation_when_fixing_bugs` (temporada inteira + virada).
+    279 testes no total.
+  - **Falta:** os clubes livres (`bY()`) da Série D ainda não têm equivalente (a 1ª etapa de `Q` entra
     vazia; só surgem quando um clube é removido de uma liga). A virada completa (evolução semanal,
     finanças, mercado de técnicos) fica para as Fases 4/5/6.
 
