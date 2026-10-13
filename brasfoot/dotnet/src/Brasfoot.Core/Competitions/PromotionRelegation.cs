@@ -98,6 +98,40 @@ public static class PromotionRelegation
     }
 
     /// <summary>
+    /// Troca direta entre uma divisão de liga e uma divisão de baixo representada por uma
+    /// <see cref="PhasedCompetition"/> (a Série D, <c>best/Z.java:508-524</c>): os últimos
+    /// <paramref name="count"/> da tabela de <paramref name="upperDivision"/> trocam com os
+    /// <paramref name="count"/> melhores candidatos de <paramref name="lower"/>
+    /// (<see cref="PhasedCompetition.PromotionCandidates"/> = <c>f/s.yW()</c>). Devolve as trocas e os
+    /// rebaixados (a fonte de <c>bY()</c>). Como no original, só troca quando as contagens batem.
+    /// </summary>
+    public static (IReadOnlyList<(Team Relegated, Team Promoted)> Swaps, IReadOnlyList<Team> Relegated)
+        SwapWithPhasedLower(
+            List<Team> upperDivision,
+            IReadOnlyList<TeamStanding> upperStanding,
+            int count,
+            PhasedCompetition lower)
+    {
+        ArgumentNullException.ThrowIfNull(upperDivision);
+        ArgumentNullException.ThrowIfNull(upperStanding);
+        ArgumentNullException.ThrowIfNull(lower);
+
+        var relegated = BottomTeams(upperStanding, count);
+        var promoted = lower.PromotionCandidates(count);
+        var swaps = new List<(Team, Team)>();
+        if (relegated.Count != promoted.Count || relegated.Count == 0)
+            return (swaps, []);
+
+        for (var i = 0; i < relegated.Count; i++)
+        {
+            upperDivision.Remove(relegated[i]);
+            upperDivision.Add(promoted[i]);
+            swaps.Add((relegated[i], promoted[i]));
+        }
+        return (swaps, relegated);
+    }
+
+    /// <summary>
     /// Mesmo que <see cref="SwapLastDivisionWithPool(List{Team},IReadOnlyList{TeamStanding},int,List{Team})"/>,
     /// lendo <c>nRebaixados</c> de <paramref name="lastDivisionConfig"/>.
     /// </summary>

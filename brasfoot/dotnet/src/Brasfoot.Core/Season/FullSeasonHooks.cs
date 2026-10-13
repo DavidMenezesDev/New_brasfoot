@@ -26,15 +26,18 @@ namespace Brasfoot.Core.Season;
 public sealed class FullSeasonHooks : SeasonHooks
 {
     private readonly IReadOnlyDictionary<(int State, int Division), ConfigEstadualType>? _stateConfigs;
+    private readonly IReadOnlyDictionary<int, ConfigLigaType>? _leagueConfigs;
     private readonly bool _useStandardGroup;
 
     public FullSeasonHooks(
         IReadOnlyDictionary<(int State, int Division), ConfigEstadualType>? stateConfigs = null,
         int countryId = Countries.Brasil,
         bool useStandardGroup = true,
-        ConfigLigaType? serieDConfig = null)
+        ConfigLigaType? serieDConfig = null,
+        IReadOnlyDictionary<int, ConfigLigaType>? leagueConfigs = null)
     {
         _stateConfigs = stateConfigs;
+        _leagueConfigs = leagueConfigs;
         CountryId = countryId;
         _useStandardGroup = useStandardGroup;
         SerieDConfig = serieDConfig;
@@ -77,13 +80,20 @@ public sealed class FullSeasonHooks : SeasonHooks
         SeasonBuilder.CreateSerieDAndCopa(session, SerieDConfig);
 
     /// <summary>
-    /// <c>best.f.aa()</c>: ao virar a temporada, liquida o acesso/rebaixamento dos estaduais
-    /// (<c>best.w.ee()</c>) — com <c>FixOriginalBugs</c>, persistindo a divisão em
+    /// <c>best.f.aa()</c>: ao virar a temporada, liquida o acesso/rebaixamento das ligas nacionais
+    /// (<c>best.Z.ee()</c>) — na carreira brasileira completa isso popula os clubes livres
+    /// (<see cref="GameSession.FreeTeams"/>, <c>bY()</c>) com os rebaixados da 3ª divisão — e o dos
+    /// estaduais (<c>best.w.ee()</c>) — com <c>FixOriginalBugs</c>, persistindo a divisão em
     /// <c>Team.StateDivision</c> para a próxima temporada, o que o original não faz — e arquiva os
     /// campeões do ano.
     /// </summary>
     public override void SeasonRollover(GameSession session)
     {
+        var national = NationalPromotionRelegation.Settle(
+            session, CountryId, _leagueConfigs, SeasonBuilder.SerieDApplies(session));
+        session.FreeTeams.Clear();
+        session.FreeTeams.AddRange(national.FreeTeams);
+
         if (session.Context.Options.FixOriginalBugs)
             foreach (var federation in session.StateFederations)
                 federation.SettlePromotionRelegation();

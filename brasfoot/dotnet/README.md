@@ -240,34 +240,47 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
   `SeasonBuilder.SelectSerieDField`/`CreateSerieD` montam o quadro (8 grupos × 8, ida e volta dentro do
   grupo, mata-mata de 32 = 4 classificados por grupo) e a criam nos dias Nacionais; `CreateNationalLeagues`
   deixa a 4ª divisão de fora no início (como `Z.Ar()`), e sem config/formato válido a Série D cai em
-  pontos corridos. Testado em `tests/Brasfoot.Tests/SerieDTests.cs` (20 testes).
+  pontos corridos. A 1ª etapa de `Q` (clubes livres, `bY()`) vem de `GameSession.FreeTeams`. Testado em
+  `tests/Brasfoot.Tests/SerieDTests.cs` (20 testes).
+- `Core/Competitions/NationalPromotionRelegation` (`best.Z.ee()`): acesso/rebaixamento das divisões da
+  liga nacional, rodado na virada. Troca os `nRebaixados` de cada par de divisões consecutivas
+  (`PromotionRelegation.SwapAdjacentDivisions`), a última com os clubes fora da liga
+  (`SwapLastDivisionWithPool`) e, na carreira brasileira completa, o par (3ª, Série D) via
+  `SwapWithPhasedLower` — os rebaixados da 3ª viram os **clubes livres** (`bY()` →
+  `GameSession.FreeTeams`) e os melhores da Série D (`PhasedCompetition.PromotionCandidates` =
+  `f/s.yW()`) sobem. As listas de `League.Divisions` e `Team.Division` são atualizadas. Recebe as
+  configs `.cfg` por divisão para os `nRebaixados`.
 - `Core/Season/FullSeasonHooks`: a montagem concreta da temporada brasileira sobre `SeasonBuilder` —
   divisões da liga nacional + estaduais + regionais em `BuildCompetitions`, a Série D e a Copa do Brasil
   em `CreateSerieDAndCopa` (nascendo no `cD`, não no início do ano), a Supercopa em `BuildCompetitions`
   (a partir do histórico da temporada anterior, `CreateSupercupFromHistory`) e, em `SeasonRollover`, a
-  liquidação do acesso/rebaixamento estadual (sob `FixOriginalBugs`) mais o arquivo de campeões. Recebe
-  as configs `.ces` (estaduais) e `.cfg` da 4ª divisão (Série D). É a ponte para o front-end (Fase 10).
+  liquidação do acesso/rebaixamento nacional (`NationalPromotionRelegation`, populando `FreeTeams`) e a
+  do estadual (esta sob `FixOriginalBugs`) mais o arquivo de campeões. Recebe as configs `.ces`
+  (estaduais), `.cfg` da 4ª divisão (Série D) e `.cfg` de todas as divisões (`leagueConfigs`). É a ponte
+  para o front-end (Fase 10).
 - `GameSession.StartNextSeason`: versão mínima da virada de `best.f.al()` — garante a virada
   (`SeasonRollover` uma vez por temporada), avança `GameState.Season`, descarta as competições do ano
   (`Leagues`/`Cups`/`BrasilCup`/`Phased`/`StateFederations`) e remonta o calendário; as competições do
-  novo ano (e a Supercopa do histórico) nascem em `BuildSeasonCalendar`.
+  novo ano (e a Supercopa do histórico) nascem em `BuildSeasonCalendar`. `GameSession.FreeTeams` guarda
+  `bY()` (os rebaixados da 3ª divisão) entre a virada e o `cD` do ano seguinte.
 - `Core/Season/SeasonArchive` + `GameState.Champions`: arquiva campeões **e vices** de todas as
   competições encerradas (`ChampionRecord` ganhou `RunnerUpId`/`RunnerUpName`), idempotente por
   `(temporada, competição)`, pulando as 1ªs fases estaduais/regionais (que vivem em `session.Leagues`).
   `SeasonBuilder.CreateSupercupFromHistory` usa esse histórico para montar a Supercopa da temporada
   seguinte (campeão da liga × campeão da copa, com o vice da copa como fallback).
-- Testado em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs` (17 testes): agendamento/dispatch do `cD`,
+- Testado em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs` (18 testes): agendamento/dispatch do `cD`,
   arquivo de liga e de copa (campeão + vice), idempotência, `Find`, Supercopa a partir do histórico
   (incluindo o fallback do vice), a criação da Série D (64 clubes, 8 grupos, mata-mata de 32) e uma
   temporada inteira sintética (124 clubes, 20/20/20/64) jogada pelo `FullSeasonHooks` até o arquivo dos
-  campeões, mais a virada para a temporada seguinte (`StartNextSeason` + Supercopa semeada pelo histórico).
+  campeões, mais a virada para a temporada seguinte (`StartNextSeason` + Supercopa semeada pelo histórico),
+  o acesso/rebaixamento nacional e os clubes livres (`bY()`).
 
 ## Ainda não portado
 
 - Copa do Brasil e Série D **foram portadas** (ver acima): o driver (`CopaDoBrasilCompetition`), a
   notificação `Bh`, o gancho `cD` (`CreateSerieDAndCopa`), a seleção da Série D (`SerieDSelection` /
-  `best.w.Q`) com a 4ª divisão criada no meio da temporada. Falta o insumo dos clubes livres (`bY()`),
-  que só existe quando um clube é removido de uma liga (`al.lP()`).
+  `best.w.Q`) com a 4ª divisão criada no meio da temporada. O insumo dos clubes livres (`bY()`) agora vem
+  do acesso/rebaixamento nacional (`NationalPromotionRelegation` → `GameSession.FreeTeams`).
 - Histórico de campeões por temporada **foi portado** (`SeasonArchive` + `ChampionRecord` alimentado
   pelas competições) e a Supercopa da temporada nasce dele (`SeasonBuilder.CreateSupercupFromHistory`
   via `FullSeasonHooks`); a virada da temporada (`GameSession.StartNextSeason`) **foi portada** na versão
@@ -275,15 +288,17 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
   `FullSeasonHooks.SeasonRollover` (sob `FixOriginalBugs`). Falta a virada completa
   (evolução semanal, finanças, mercado de técnicos).
 - Mata-mata: o wrapper `f.B`/`f.z` como objeto coeso (`fc(1802/1803/90)`, hand-off do código 1020) —
-  os novos `PromotionRelegation` e `BracketSeeder.DetermineGroupKnockoutSeeding` são chamados
-  explicitamente por quem monta a temporada, não são métodos de um `f.B`/`f.s` portado (spec §3.7).
+  os novos `PromotionRelegation` (chamados por `NationalPromotionRelegation`) e
+  `BracketSeeder.DetermineGroupKnockoutSeeding` são chamados explicitamente por quem monta a temporada,
+  não são métodos de um `f.B`/`f.s` portado (spec §3.7).
   Cruzamento alternado, decisão de 3º lugar e posições finais do mata-mata **foram portados** em
   rodada anterior; prêmios (`c(int,int,boolean)`) e pontos de ranking/reputação **foram portados**
   nesta rodada (`CompetitionPrizes`/`CompetitionRanking`, ver seção acima).
 - Acesso/rebaixamento: portado para o caso sem grupos (`SwapAdjacentDivisions`,
-  `SwapLastDivisionWithPool`, `AccessPlayoffField`, `RelegationPlayoffField`, cada uma com sobrecarga
-  `ConfigLigaType`); falta o caso com grupos (`Zd != 0`) e as tabelas fixas de 11/25 times
-  byte-fiéis (§3.3/§3.7 da spec).
+  `SwapLastDivisionWithPool`, `SwapWithPhasedLower`, `AccessPlayoffField`, `RelegationPlayoffField`, cada
+  uma com sobrecarga `ConfigLigaType`) e agora **ligado à virada** por `NationalPromotionRelegation`
+  (`best.Z.ee()`, nacional) e `StateFederation.SettlePromotionRelegation` (estadual); falta o caso com
+  grupos (`Zd != 0`) e as tabelas fixas de 11/25 times byte-fiéis (§3.3/§3.7 da spec).
 - Virada de temporada: aposentadorias, novos juniores, promoção, mercado IA×IA (`best/ag.java`) e
   reposição de elenco do vendedor (`l.a(ah, F)`).
 - Leilões, compra de juniores, propostas não solicitadas da IA, pagamento de salários e livro-caixa

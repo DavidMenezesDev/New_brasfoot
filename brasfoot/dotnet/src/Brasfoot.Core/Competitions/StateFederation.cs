@@ -38,8 +38,7 @@ public sealed class StateDivision
     /// <c>f/s.yU()</c> = <c>fG(nRebaixados)</c>: para os estaduais (<c>zc()</c> falso), os
     /// <see cref="Relegated"/> últimos da classificação geral (<c>Zb</c>).
     /// </summary>
-    public List<Team> RelegatedBottom() =>
-        Phased.Standing.TakeLast(Math.Min(Relegated, Phased.Standing.Count)).Select(s => s.Team).ToList();
+    public List<Team> RelegatedBottom() => Phased.RelegatedBottom(Relegated);
 
     /// <summary>
     /// <c>f/s.yW()</c> = <c>l(count, true)</c>: os melhores <paramref name="count"/> clubes que
@@ -47,29 +46,7 @@ public sealed class StateDivision
     /// para frente (campeão, vice, semifinalistas…), completando pela tabela geral
     /// (<c>f/s.java:1247-1276</c>).
     /// </summary>
-    public List<Team> PromotionCandidates(int count)
-    {
-        var result = new List<Team>();
-        if (count <= 0) return result;
-
-        var bracket = Phased.Knockout?.Bracket;
-        if (bracket is not null)
-        {
-            for (var r = bracket.Rounds.Count - 1; r >= 0; r--)
-                foreach (var pairing in bracket.Rounds[r].Pairings)
-                {
-                    if (result.Count >= count) break;
-                    if (pairing.Winner is { } winner && !result.Contains(winner)) result.Add(winner);
-                }
-        }
-
-        foreach (var row in Phased.Standing)
-        {
-            if (result.Count >= count) break;
-            if (!result.Contains(row.Team)) result.Add(row.Team);
-        }
-        return result.Take(Math.Min(count, result.Count)).ToList();
-    }
+    public List<Team> PromotionCandidates(int count) => Phased.PromotionCandidates(count);
 }
 
 /// <summary>

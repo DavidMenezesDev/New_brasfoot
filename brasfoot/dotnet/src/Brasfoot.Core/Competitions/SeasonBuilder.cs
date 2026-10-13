@@ -181,9 +181,9 @@ public static class SeasonBuilder
 
     /// <summary>
     /// <c>best.w.Q(n)</c> aplicado a uma sessão: monta o quadro da Série D de <paramref name="size"/>
-    /// clubes a partir dos slots dos estaduais (<see cref="SerieDSelection.FromFederations"/>) e dos
-    /// clubes brasileiros elegíveis (<c>Z.jg()</c> filtrado). Os clubes livres (<c>bY()</c>) ainda não
-    /// têm equivalente no port, então a primeira etapa de <c>Q</c> entra vazia.
+    /// clubes a partir dos clubes livres (<see cref="GameSession.FreeTeams"/>, <c>bY()</c>), dos slots
+    /// dos estaduais (<see cref="SerieDSelection.FromFederations"/>) e dos clubes brasileiros
+    /// elegíveis (<c>Z.jg()</c> filtrado).
     /// </summary>
     public static List<Team> SelectSerieDField(GameSession session, int size)
     {
@@ -193,7 +193,10 @@ public static class SeasonBuilder
         var country = session.State.World.Teams
             .Where(t => EligibleForSerieD(session, t))
             .ToList();
-        return SerieDSelection.Select(size, slots, freeTeams: [], country);
+        var freeTeams = session.FreeTeams
+            .Where(t => t.Division == 0 && EligibleForSerieD(session, t))
+            .ToList();
+        return SerieDSelection.Select(size, slots, freeTeams, country);
     }
 
     /// <summary>

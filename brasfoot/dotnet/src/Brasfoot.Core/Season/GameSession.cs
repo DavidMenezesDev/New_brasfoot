@@ -66,6 +66,14 @@ public sealed class GameSession
     /// </summary>
     public List<StateFederation> StateFederations { get; } = new();
 
+    /// <summary>
+    /// Clubes livres (<c>best.f.bY()</c>, campo <c>bu</c>): a fonte do passo 1 de
+    /// <c>best.w.Q</c> na Série D. São os rebaixados da 3ª divisão nacional quando a carreira
+    /// brasileira é completa; montados na virada (<see cref="SeasonHooks.SeasonRollover"/> por
+    /// <see cref="Competitions.NationalPromotionRelegation"/>) e consumidos no gancho <c>cD</c>.
+    /// </summary>
+    public List<Team> FreeTeams { get; } = new();
+
     /// <summary>Ano civil da temporada corrente (<c>op() + ae - 1</c>, <c>best/f.java:1208</c>).</summary>
     public int Year => State.BaseYear + (State.Season - 1);
 

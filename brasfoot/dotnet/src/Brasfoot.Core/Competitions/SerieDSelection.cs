@@ -23,8 +23,9 @@ namespace Brasfoot.Core.Competitions;
 /// <c>jW()</c>; se <c>n == 64</c> ordena tudo por <c>jX()</c>.
 /// </para>
 /// <para>
-/// Os clubes livres (<c>bY()</c>) ainda não têm equivalente no port (só surgem quando um clube é
-/// removido de uma liga, <c>al.lP()</c>); a primeira temporada os tem vazios, como o original.
+/// Os clubes livres (<c>bY()</c>, <see cref="Season.GameSession.FreeTeams"/>) são os rebaixados da 3ª
+/// divisão nacional quando a carreira brasileira é completa, populados na virada por
+/// <see cref="NationalPromotionRelegation"/>; a primeira temporada os tem vazios, como o original.
 /// </para>
 /// </remarks>
 public static class SerieDSelection

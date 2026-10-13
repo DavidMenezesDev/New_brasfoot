@@ -137,6 +137,38 @@ public sealed class PhasedCompetition
         return _phase1[0].FinalPositions();
     }
 
+    /// <summary>
+    /// <c>f/s.yW()</c> = <c>l(count, true)</c>: os melhores <paramref name="count"/> clubes que
+    /// subiriam. Com mata-mata (<c>Zc</c>), são os vencedores de cada fase da chave iterados de trás
+    /// para frente (campeão, vice, semifinalistas…), completando pela tabela geral
+    /// (<c>f/s.java:1247-1276</c>).
+    /// </summary>
+    public List<Team> PromotionCandidates(int count)
+    {
+        var result = new List<Team>();
+        if (count <= 0) return result;
+
+        var bracket = _cup?.Bracket;
+        if (bracket is not null)
+            for (var r = bracket.Rounds.Count - 1; r >= 0; r--)
+                foreach (var pairing in bracket.Rounds[r].Pairings)
+                {
+                    if (result.Count >= count) break;
+                    if (pairing.Winner is { } winner && !result.Contains(winner)) result.Add(winner);
+                }
+
+        foreach (var row in Standing)
+        {
+            if (result.Count >= count) break;
+            if (!result.Contains(row.Team)) result.Add(row.Team);
+        }
+        return result.Take(Math.Min(count, result.Count)).ToList();
+    }
+
+    /// <summary>Os <paramref name="count"/> últimos da classificação geral (<c>f/s.yU()</c>, <c>fG</c>).</summary>
+    public List<Team> RelegatedBottom(int count) =>
+        Standing.TakeLast(Math.Min(count, Standing.Count)).Select(s => s.Team).ToList();
+
     /// <summary>Contabiliza os jogos do dia (1ª fase via ligas; mata-mata via copa).</summary>
     public int RecordResults(CalendarDay day)
     {

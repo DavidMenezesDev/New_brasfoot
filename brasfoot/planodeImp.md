@@ -242,7 +242,7 @@ Princípios:
     `FullSeasonHooks` recebe a config `.cfg` da 4ª divisão (default brasileiro 8×4). 20 testes de
     `SerieDSelection` (`tests/Brasfoot.Tests/SerieDTests.cs`) + 1 de criação da Série D; verificado
     com os dados reais (brasfoot-linux: 64 clubes, 8 grupos de 8). 277 testes no total.
-  - **Feito (acesso/rebaixamento estadual persistido):** `SettlePromotionRelegation` (<c>best.w.ee()</c>)
+  - **Feito (acesso/rebaixamento estadual persistido):** `SettlePromotionRelegation` (`best.w.ee()`)
     agora é chamado na virada de temporada (`FullSeasonHooks.SeasonRollover`, antes de arquivar os
     campeões) e grava a divisão de destino em `Team.StateDivision`; `StateFederation.Build` passa a
     respeitá-la (a divisão persistida domina o nível), tudo sob `RulesOptions.FixOriginalBugs`. É a
@@ -250,9 +250,24 @@ Princípios:
     Testes: `Federation_persists_promotion_and_relegation_across_seasons` (direto) e
     `SeasonRollover_settles_state_promotion_and_relegation_when_fixing_bugs` (temporada inteira + virada).
     279 testes no total.
-  - **Falta:** os clubes livres (`bY()`) da Série D ainda não têm equivalente (a 1ª etapa de `Q` entra
-    vazia; só surgem quando um clube é removido de uma liga). A virada completa (evolução semanal,
-    finanças, mercado de técnicos) fica para as Fases 4/5/6.
+  - **Feito (acesso/rebaixamento nacional + clubes livres `bY()`):** `Core/Competitions/NationalPromotionRelegation`
+    porta `best.Z.ee()`: para cada par de divisões consecutivas troca os `nRebaixados` da de cima pela
+    tabela (`PromotionRelegation.SwapAdjacentDivisions`); a última divisão troca com os clubes fora da
+    liga (`Z.dt`, `SwapLastDivisionWithPool`); na carreira brasileira completa o par (3ª, Série D) é
+    tratado à parte por `SwapWithPhasedLower` — os rebaixados da 3ª divisão viram os **clubes livres**
+    (`bY()`) e os melhores da Série D (`PhasedCompetition.PromotionCandidates` = `f/s.yW()`) sobem para
+    a 3ª divisão. É o único ponto que popula `bY()` no original (`best/Z.java:499-521`); a menção a
+    `al.lP()` é enganosa (enche `bu()`, a lista de **técnicos** desempregados, não `bY()`).
+    `GameSession.FreeTeams` guarda `bY()` (populado em `FullSeasonHooks.SeasonRollover`, consumido no
+    passo 1 de `SeasonBuilder.SelectSerieDField`). `FullSeasonHooks` passa a receber também as configs
+    `.cfg` de todas as divisões (`leagueConfigs`) para os `nRebaixados`; as listas de `League.Divisions`
+    e `Team.Division` são atualizadas. Teste:
+    `SeasonRollover_settles_national_promotion_and_relegation_and_fills_free_teams`. (Nota: a
+    liquidação nacional roda sempre, como no original; a persistência estadual é que segue sob
+    `FixOriginalBugs`.)
+  - **Falta:** a virada completa (evolução semanal, finanças, mercado de técnicos) fica para as
+    Fases 4/5/6; os playoffs de acesso/rebaixamento (códigos 1099/1098) não são modelados (as
+    competições do port não os criam).
 
 ### Fase 5 — Finanças e estádio (spec-financas §1)
 - `Ledger` por temporada com categorias; salários (mensal dia 2 ×4 ou semanal domingo, só em meses

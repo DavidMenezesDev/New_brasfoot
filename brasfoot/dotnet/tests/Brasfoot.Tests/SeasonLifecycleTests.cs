@@ -378,6 +378,46 @@ public class SeasonLifecycleTests
         Assert.Contains(session.StateFederations.SelectMany(f => f.Leftovers), t => t.StateDivision == 0);
     }
 
+    // ---- Acesso/rebaixamento nacional (best.Z.ee) + clubes livres (bY()) ------
+
+    [Fact]
+    public void SeasonRollover_settles_national_promotion_and_relegation_and_fills_free_teams()
+    {
+        var world = BuildBrazilianWorld();
+        var state = GameState.FromWorld(world, new GameOptions());
+        state.BaseYear = 2022;
+        var session = new GameSession(state, TestData.Context(), new FullSeasonHooks());
+        session.BuildSeasonCalendar();
+
+        var league = state.World.LeagueOf(Brasil)!;
+        var div1Before = league.Divisions[0].ToList();
+        var div2Before = league.Divisions[1].ToList();
+        var div3Before = league.Divisions[2].ToList();
+
+        PlayWholeSeason(session);
+        session.AdvanceToNextMatchDay(); // best.f.aa(): liquida o acesso/rebaixamento e popula bY()
+
+        // Cada divisão da liga nacional trocou os últimos pelos melhores da de baixo, mantendo o tamanho.
+        foreach (var (before, after) in new[]
+                 {
+                     (div1Before, league.Divisions[0]),
+                     (div2Before, league.Divisions[1]),
+                     (div3Before, league.Divisions[2]),
+                 })
+            Assert.Equal(before.Count, after.Count);
+
+        // Os clubes livres (bY()) são os rebaixados da 3ª divisão, agora fora da liga nacional.
+        Assert.NotEmpty(session.FreeTeams);
+        Assert.All(session.FreeTeams, t => Assert.Equal(0, t.Division));
+        Assert.All(session.FreeTeams, t => Assert.DoesNotContain(t, league.Divisions[2]));
+        Assert.All(session.FreeTeams, t => Assert.DoesNotContain(t, league.Divisions[0]));
+        Assert.All(session.FreeTeams, t => Assert.DoesNotContain(t, league.Divisions[1]));
+
+        // A Série D seguinte começa pelos clubes livres (passo 1 de best.w.Q).
+        var field = SeasonBuilder.SelectSerieDField(session, league.Divisions[^1].Count);
+        Assert.All(session.FreeTeams, t => Assert.Contains(t, field));
+    }
+
     // ---- Virada de temporada (GameSession.StartNextSeason) -------------------
 
     private static void PlayWholeSeason(GameSession session)
