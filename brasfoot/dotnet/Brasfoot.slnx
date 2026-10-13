@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Brasfoot.App/Brasfoot.App.csproj" />
     <Project Path="src/Brasfoot.Cli/Brasfoot.Cli.csproj" />
     <Project Path="src/Brasfoot.Core/Brasfoot.Core.csproj" />
     <Project Path="src/Brasfoot.Data/Brasfoot.Data.csproj" />

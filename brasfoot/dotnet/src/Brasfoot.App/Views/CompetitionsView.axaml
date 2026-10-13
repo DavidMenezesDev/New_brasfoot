@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             x:Class="Brasfoot.App.Views.CompetitionsView"
+             x:DataType="vm:CompetitionsViewModel">
+  <ScrollViewer>
+    <ItemsControl ItemsSource="{Binding Groups}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:CompetitionGroup">
+          <Border Classes="card" Margin="0,0,0,12">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Text="{Binding Status}" Classes="muted" />
+              </Grid>
+              <DataGrid ItemsSource="{Binding Rows}" IsVisible="{Binding Rows.Count}" IsReadOnly="True" AutoGenerateColumns="False" MaxHeight="320">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="#" Binding="{Binding Position}" Width="40" />
+                  <DataGridTextColumn Header="Clube" Binding="{Binding DisplayClub}" Width="*" />
+                  <DataGridTextColumn Header="Pts" Binding="{Binding Points}" Width="50" />
+                  <DataGridTextColumn Header="J" Binding="{Binding Played}" Width="40" />
+                  <DataGridTextColumn Header="V" Binding="{Binding Won}" Width="40" />
+                  <DataGridTextColumn Header="E" Binding="{Binding Drawn}" Width="40" />
+                  <DataGridTextColumn Header="D" Binding="{Binding Lost}" Width="40" />
+                  <DataGridTextColumn Header="SG" Binding="{Binding GoalDifference}" Width="50" />
+                </DataGrid.Columns>
+              </DataGrid>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </ScrollViewer>
+</UserControl>

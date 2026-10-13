@@ -1,0 +1,116 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <Color x:Key="BfBase">#0E1311</Color>
+    <Color x:Key="BfPanel">#151D1A</Color>
+    <Color x:Key="BfPanelHeader">#1C2924</Color>
+    <Color x:Key="BfControl">#21302A</Color>
+    <Color x:Key="BfBorder">#2A3D35</Color>
+    <Color x:Key="BfAccent">#2FA84F</Color>
+    <Color x:Key="BfAccentSoft">#2FA84F</Color>
+    <Color x:Key="BfText">#E8EFEA</Color>
+    <Color x:Key="BfMuted">#8DA399</Color>
+
+    <SolidColorBrush x:Key="BfBaseBrush" Color="{StaticResource BfBase}" />
+    <SolidColorBrush x:Key="BfPanelBrush" Color="{StaticResource BfPanel}" />
+    <SolidColorBrush x:Key="BfPanelHeaderBrush" Color="{StaticResource BfPanelHeader}" />
+    <SolidColorBrush x:Key="BfControlBrush" Color="{StaticResource BfControl}" />
+    <SolidColorBrush x:Key="BfBorderBrush" Color="{StaticResource BfBorder}" />
+    <SolidColorBrush x:Key="BfAccentBrush" Color="{StaticResource BfAccent}" />
+    <SolidColorBrush x:Key="BfMutedBrush" Color="{StaticResource BfMuted}" />
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{StaticResource BfBaseBrush}" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{StaticResource BfPanelBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BfBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="12" />
+  </Style>
+
+  <Style Selector="Border.bar">
+    <Setter Property="Background" Value="{StaticResource BfPanelHeaderBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BfBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="16,10" />
+  </Style>
+
+  <Style Selector="TextBlock.h1">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector="TextBlock.h2">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{StaticResource BfMutedBrush}" />
+    <Setter Property="Margin" Value="0,0,0,8" />
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{StaticResource BfMutedBrush}" />
+  </Style>
+
+  <Style Selector="Button">
+    <Setter Property="Background" Value="{StaticResource BfControlBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BfBorderBrush}" />
+    <Setter Property="Padding" Value="12,7" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  <Style Selector="Button.accent">
+    <Setter Property="Background" Value="{StaticResource BfAccentBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BfAccentBrush}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.nav">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="ListBoxItem">
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Margin" Value="0,1" />
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="#1F3A2B" />
+    <Setter Property="BorderBrush" Value="{StaticResource BfAccentBrush}" />
+    <Setter Property="BorderThickness" Value="3,0,0,0" />
+  </Style>
+
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="{StaticResource BfControlBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BfBorderBrush}" />
+  </Style>
+
+  <Style Selector="DataGrid">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="GridLinesVisibility" Value="Horizontal" />
+    <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BfBorderBrush}" />
+  </Style>
+  <Style Selector="DataGridColumnHeader">
+    <Setter Property="Background" Value="{StaticResource BfPanelHeaderBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource BfMutedBrush}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="DataGridRow">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ProgressBar">
+    <Setter Property="Foreground" Value="{StaticResource BfAccentBrush}" />
+  </Style>
+</Styles>

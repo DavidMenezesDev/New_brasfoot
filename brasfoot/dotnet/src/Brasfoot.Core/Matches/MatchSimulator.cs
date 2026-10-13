@@ -13,7 +13,10 @@ public static class MatchSimulator
     {
         for (var side = 0; side < 2; side++)
         {
-            if (match.OnPitch[side].Count == 0) LineupSelector.Select(match.TeamOf(side), match, side, ctx);
+            if (match.OnPitch[side].Count > 0) continue;
+            var team = match.TeamOf(side);
+            if (!(team.IsHuman && HumanLineup.Apply(team, match, side, ctx)))
+                LineupSelector.Select(team, match, side, ctx);
         }
 
         var engine = new MatchEngine(match, ctx);

@@ -57,6 +57,9 @@ public sealed class Player
 
     // Estado de partida (transiente)
     public int Slot { get; set; } = -1;
+
+    /// <summary>Ordem no banco escolhida pelo técnico humano (-1 = fora do banco).</summary>
+    public int BenchOrder { get; set; } = -1;
     public int YellowsInMatch { get; set; }
     public MatchSheet Sheet { get; set; } = new();
 

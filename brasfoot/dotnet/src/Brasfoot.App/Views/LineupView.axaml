@@ -1,0 +1,166 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             x:Class="Brasfoot.App.Views.LineupView"
+             x:DataType="vm:LineupViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.selected">
+      <Setter Property="BorderBrush" Value="White" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="*,300" ColumnSpacing="12">
+    <Border Classes="card">
+      <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
+        <Grid ColumnDefinitions="200,Auto,*" ColumnSpacing="12">
+          <ComboBox ItemsSource="{Binding Formations}" SelectedItem="{Binding SelectedFormation}" HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:FormationOption">
+                <TextBlock Text="{Binding Name}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Grid.Column="1" Content="Escalação automática" Command="{Binding AutoFillCommand}" />
+          <TextBlock Grid.Column="2" VerticalAlignment="Center" Classes="muted" HorizontalAlignment="Right">
+            <Run Text="Média titular " /><Run Text="{Binding TeamRating, StringFormat='{}{0:0.0}'}" />
+          </TextBlock>
+        </Grid>
+
+        <Viewbox Grid.Row="1" Stretch="Uniform">
+          <Grid Width="520" Height="680">
+            <Border CornerRadius="10" ClipToBounds="True">
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                  <GradientStop Color="#1E7A3C" Offset="0" />
+                  <GradientStop Color="#17602F" Offset="0.5" />
+                  <GradientStop Color="#1E7A3C" Offset="1" />
+                </LinearGradientBrush>
+              </Border.Background>
+            </Border>
+
+            <Canvas IsHitTestVisible="False" Width="520" Height="680">
+              <Rectangle Canvas.Left="10" Canvas.Top="10" Width="500" Height="660" Stroke="#E8F5EC" StrokeThickness="2" Opacity="0.7" />
+              <Rectangle Canvas.Left="10" Canvas.Top="339" Width="500" Height="2" Fill="#E8F5EC" Opacity="0.7" />
+              <Ellipse Canvas.Left="180" Canvas.Top="260" Width="160" Height="160" Stroke="#E8F5EC" StrokeThickness="2" Opacity="0.7" />
+              <Ellipse Canvas.Left="252" Canvas.Top="332" Width="16" Height="16" Fill="#E8F5EC" Opacity="0.7" />
+              <Rectangle Canvas.Left="120" Canvas.Top="10" Width="280" Height="110" Stroke="#E8F5EC" StrokeThickness="2" Opacity="0.7" />
+              <Rectangle Canvas.Left="120" Canvas.Top="560" Width="280" Height="110" Stroke="#E8F5EC" StrokeThickness="2" Opacity="0.7" />
+              <Rectangle Canvas.Left="200" Canvas.Top="10" Width="120" Height="45" Stroke="#E8F5EC" StrokeThickness="2" Opacity="0.7" />
+              <Rectangle Canvas.Left="200" Canvas.Top="625" Width="120" Height="45" Stroke="#E8F5EC" StrokeThickness="2" Opacity="0.7" />
+            </Canvas>
+
+            <ItemsControl ItemsSource="{Binding Starters}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <Panel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.Styles>
+                <Style Selector="ContentPresenter">
+                  <Setter Property="HorizontalAlignment" Value="Left" />
+                  <Setter Property="VerticalAlignment" Value="Top" />
+                </Style>
+              </ItemsControl.Styles>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PitchCard">
+                  <Button Width="92" Height="104" Margin="{Binding Margin}" Padding="0" Background="Transparent" BorderThickness="0"
+                          Command="{Binding $parent[UserControl].((vm:LineupViewModel)DataContext).SelectCardCommand}"
+                          CommandParameter="{Binding}">
+                    <Border Background="{Binding Tier}" CornerRadius="8" BorderThickness="3" BorderBrush="Transparent"
+                            Classes.selected="{Binding IsSelected}" Padding="6" Width="92" Height="104">
+                      <Grid RowDefinitions="Auto,*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                          <TextBlock Text="{Binding Strength}" FontSize="22" FontWeight="Bold" Foreground="#111" />
+                          <TextBlock Text="{Binding Position}" FontSize="10" Foreground="#222" VerticalAlignment="Bottom" Margin="0,0,0,4" />
+                        </StackPanel>
+                        <TextBlock Grid.Row="1" Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="#111"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <StackPanel Grid.Row="2" Spacing="0">
+                          <TextBlock Text="lesionado" FontSize="10" Foreground="#8B0000" HorizontalAlignment="Center" IsVisible="{Binding Injured}" />
+                          <TextBlock Text="fora de posição" FontSize="10" Foreground="#5A3A00" HorizontalAlignment="Center" IsVisible="{Binding OutOfPosition}" />
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Grid>
+        </Viewbox>
+
+        <ScrollViewer Grid.Row="2" MaxHeight="190">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="BANCO" />
+            <ItemsControl ItemsSource="{Binding Bench}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PitchCard">
+                  <Button Width="150" Height="40" Margin="0,0,6,6" Padding="8,4"
+                          Command="{Binding $parent[UserControl].((vm:LineupViewModel)DataContext).SelectCardCommand}"
+                          CommandParameter="{Binding}">
+                    <Grid ColumnDefinitions="36,*,Auto">
+                      <TextBlock Text="{Binding Strength}" FontWeight="Bold" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Grid.Column="2" Text="{Binding Position}" Classes="muted" FontSize="10" VerticalAlignment="Center" />
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Classes="h2" Text="FORA DA CONVOCAÇÃO" />
+            <ItemsControl ItemsSource="{Binding Outside}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PitchCard">
+                  <Button Width="150" Height="40" Margin="0,0,6,6" Padding="8,4" Opacity="0.7"
+                          Command="{Binding $parent[UserControl].((vm:LineupViewModel)DataContext).SelectCardCommand}"
+                          CommandParameter="{Binding}">
+                    <Grid ColumnDefinitions="36,*,Auto">
+                      <TextBlock Text="{Binding Strength}" FontWeight="Bold" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Grid.Column="2" Text="{Binding Position}" Classes="muted" FontSize="10" VerticalAlignment="Center" />
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Border>
+
+    <Border Grid.Column="1" Classes="card">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="h2" Text="TÁTICA" />
+        <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding SelectedStyle}" HorizontalAlignment="Stretch" />
+        <ComboBox ItemsSource="{Binding MarkingOptions}" SelectedItem="{Binding SelectedMarking}" HorizontalAlignment="Stretch" />
+        <ComboBox ItemsSource="{Binding PlayOptions}" SelectedItem="{Binding SelectedPlay}" HorizontalAlignment="Stretch" />
+
+        <Border Classes="card" Padding="10" Margin="0,8,0,0">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="JOGADOR SELECIONADO" />
+            <TextBlock Text="{Binding SelectedName}" FontWeight="SemiBold" IsVisible="{Binding HasSelection}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding SelectedInfo}" Classes="muted" IsVisible="{Binding HasSelection}" />
+            <TextBlock Text="Clique em outro jogador para trocar de lugar." Classes="muted" FontSize="12" IsVisible="{Binding HasSelection}" TextWrapping="Wrap" />
+            <TextBlock Text="Nenhum jogador selecionado." Classes="muted" IsVisible="{Binding !HasSelection}" />
+            <Button Content="Mandar ao campo" HorizontalAlignment="Stretch" Command="{Binding SendToFieldCommand}" IsEnabled="{Binding HasSelection}" />
+            <Button Content="Mandar ao banco" HorizontalAlignment="Stretch" Command="{Binding SendToBenchCommand}" IsEnabled="{Binding HasSelection}" />
+          </StackPanel>
+        </Border>
+
+        <Border IsVisible="{Binding HasProblems}" Background="#3A1F1A" CornerRadius="4" Padding="10">
+          <TextBlock Text="{Binding Problems}" TextWrapping="Wrap" Foreground="#FFB4A6" FontSize="12" />
+        </Border>
+        <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

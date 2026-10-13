@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             x:Class="Brasfoot.App.Views.MenuView"
+             x:DataType="vm:MenuViewModel">
+  <Grid>
+    <Grid.Background>
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#0E1311" Offset="0" />
+        <GradientStop Color="#123222" Offset="1" />
+      </LinearGradientBrush>
+    </Grid.Background>
+
+    <Canvas IsHitTestVisible="False" Opacity="0.10">
+      <Ellipse Canvas.Left="-160" Canvas.Top="-160" Width="700" Height="700" Stroke="#2FA84F" StrokeThickness="2" />
+      <Ellipse Canvas.Left="520" Canvas.Top="260" Width="520" Height="520" Stroke="#2FA84F" StrokeThickness="2" />
+      <Rectangle Canvas.Left="0" Canvas.Top="350" Width="1280" Height="2" Fill="#2FA84F" />
+    </Canvas>
+
+    <StackPanel Width="380" Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Center">
+      <Border Width="64" Height="64" CornerRadius="10" Background="{StaticResource BfAccentBrush}" HorizontalAlignment="Center" Margin="0,0,0,8">
+        <TextBlock Text="B" FontSize="40" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <TextBlock Text="BRASFOOT" FontSize="46" FontWeight="Black" HorizontalAlignment="Center" />
+      <TextBlock Text="Gestão de futebol brasileiro" Classes="muted" FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,28" />
+
+      <Button Content="Novo jogo" Classes="accent" HorizontalContentAlignment="Center" Padding="0,14" FontSize="16" Command="{Binding NewGameCommand}" />
+      <Button Content="Carregar jogo" HorizontalContentAlignment="Center" Padding="0,12" IsEnabled="False" ToolTip.Tip="Em breve" />
+      <Button Content="Editor de times" HorizontalContentAlignment="Center" Padding="0,12" IsEnabled="False" ToolTip.Tip="Em breve" />
+      <Button x:Name="ExitButton" Content="Sair" HorizontalContentAlignment="Center" Padding="0,12" />
+
+      <TextBlock Text="{Binding DataStatus}" FontSize="11" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,24,0,0"
+                 Classes="muted" />
+    </StackPanel>
+  </Grid>
+</UserControl>

@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             xmlns:core="using:Brasfoot.Core.Domain"
+             x:Class="Brasfoot.App.Views.NewGameView"
+             x:DataType="vm:NewGameViewModel">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="14" MaxWidth="760" HorizontalAlignment="Center">
+    <StackPanel Spacing="2">
+      <TextBlock Text="Novo jogo" FontSize="26" FontWeight="Bold" />
+      <TextBlock Text="Escolha o clube que você vai dirigir." Classes="muted" />
+    </StackPanel>
+
+    <Border Grid.Row="1" Classes="card">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <TextBox Text="{Binding GameDir}" Watermark="Pasta brasfoot-linux da instalação" />
+        <Button Grid.Column="1" Content="Carregar times" Command="{Binding LoadTeamsCommand}" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="2" Classes="card">
+      <Grid RowDefinitions="Auto,*">
+        <TextBlock Classes="h2" Text="CLUBES BRASILEIROS" />
+        <ListBox Grid.Row="1" ItemsSource="{Binding Teams}" SelectedItem="{Binding SelectedTeam}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="core:Team">
+              <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="24">
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Classes="muted"><Run Text="nível " /><Run Text="{Binding Level}" /></TextBlock>
+                <TextBlock Grid.Column="2" Classes="muted"><Run Text="reputação " /><Run Text="{Binding Reputation}" /></TextBlock>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </Border>
+
+    <StackPanel Grid.Row="3" Spacing="8">
+      <TextBlock Text="{Binding Error}" Foreground="#FF8A7A" TextWrapping="Wrap"
+                 IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+      <ProgressBar IsIndeterminate="True" IsVisible="{Binding Busy}" />
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Content="Voltar" Command="{Binding BackCommand}" Padding="18,10" />
+        <Button Content="Iniciar jogo" Classes="accent" Command="{Binding StartCommand}" Padding="24,10" />
+      </StackPanel>
+    </StackPanel>
+  </Grid>
+</UserControl>

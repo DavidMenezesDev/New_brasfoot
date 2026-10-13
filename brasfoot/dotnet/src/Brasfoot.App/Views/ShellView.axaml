@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             x:Class="Brasfoot.App.Views.ShellView"
+             x:DataType="vm:ShellViewModel">
+  <Grid RowDefinitions="Auto,*">
+    <Border Classes="bar">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+          <Border Width="40" Height="40" CornerRadius="6" Background="{StaticResource BfAccentBrush}">
+            <TextBlock Text="{Binding Badge}" FontSize="20" FontWeight="Bold" Foreground="White"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <StackPanel Spacing="0">
+            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Status}" Classes="muted" FontSize="12" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <TextBlock Text="{Binding CurrentDate}" FontSize="14" />
+          <TextBlock Text="{Binding Cash}" FontSize="14" Classes="muted" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Content="Avançar dia" Classes="accent" Padding="20,9" Command="{Binding AdvanceDayCommand}" IsVisible="{Binding !SeasonEnded}" />
+          <Button Content="Iniciar nova temporada" Classes="accent" Padding="20,9" Command="{Binding NextSeasonCommand}" IsVisible="{Binding SeasonEnded}" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="210,*">
+      <Border Background="#111916" BorderBrush="{StaticResource BfBorderBrush}" BorderThickness="0,0,1,0" Padding="8">
+        <Grid RowDefinitions="*,Auto" RowSpacing="8">
+          <ListBox ItemsSource="{Binding Pages}" SelectedItem="{Binding SelectedPage}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:IGamePage">
+                <TextBlock Text="{Binding Title}" FontSize="13" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Row="1" Content="Menu principal" Command="{Binding ReturnToMenuCommand}" HorizontalAlignment="Stretch" />
+        </Grid>
+      </Border>
+
+      <Grid Grid.Column="1" RowDefinitions="Auto,*" Margin="16">
+        <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8" />
+        <ContentControl Grid.Row="1" Content="{Binding Current}" />
+      </Grid>
+    </Grid>
+  </Grid>
+</UserControl>

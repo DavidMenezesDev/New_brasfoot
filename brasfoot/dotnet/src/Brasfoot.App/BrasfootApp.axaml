@@ -1,0 +1,40 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             xmlns:views="using:Brasfoot.App.Views"
+             x:Class="Brasfoot.App.BrasfootApp"
+             RequestedThemeVariant="Dark">
+  <Application.DataTemplates>
+    <DataTemplate DataType="vm:MenuViewModel">
+      <views:MenuView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:NewGameViewModel">
+      <views:NewGameView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ShellViewModel">
+      <views:ShellView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ClubViewModel">
+      <views:ClubView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:CompetitionsViewModel">
+      <views:CompetitionsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:HistoryViewModel">
+      <views:HistoryView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:LineupViewModel">
+      <views:LineupView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:MarketViewModel">
+      <views:MarketView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:PlaceholderViewModel">
+      <views:PlaceholderView />
+    </DataTemplate>
+  </Application.DataTemplates>
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://Brasfoot/Themes/BrasfootTheme.axaml" />
+  </Application.Styles>
+</Application>

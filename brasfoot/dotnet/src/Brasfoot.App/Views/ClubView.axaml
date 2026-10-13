@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             x:Class="Brasfoot.App.Views.ClubView"
+             x:DataType="vm:ClubViewModel">
+  <Grid ColumnDefinitions="300,*,340" ColumnSpacing="12">
+    <Border Classes="card">
+      <ScrollViewer>
+        <StackPanel Spacing="6">
+          <TextBlock Classes="h2" Text="PRÓXIMOS JOGOS" />
+          <ItemsControl ItemsSource="{Binding Upcoming}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:MatchRow">
+                <Grid ColumnDefinitions="48,*" Margin="0,3">
+                  <TextBlock Text="{Binding Date}" Classes="muted" />
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Opponent}" FontWeight="SemiBold" />
+                    <TextBlock Classes="muted" FontSize="11">
+                      <Run Text="{Binding Venue}" /><Run Text=" · " /><Run Text="{Binding Competition}" />
+                    </TextBlock>
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="h2" Text="CLUBE" Margin="0,16,0,0" />
+          <TextBlock Text="{Binding Info}" TextWrapping="Wrap" Classes="muted" FontSize="12" />
+          <TextBlock Text="Finanças: em breve (Fase 5)." Classes="muted" FontSize="12" Margin="0,8,0,0" />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <Border Grid.Column="1" Classes="card">
+      <Grid RowDefinitions="Auto,*">
+        <TextBlock Classes="h2" Text="{Binding LeagueName, StringFormat='CLASSIFICAÇÃO · {0}'}" />
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Standing}" IsReadOnly="True" AutoGenerateColumns="False">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="#" Binding="{Binding Position}" Width="40" />
+            <DataGridTextColumn Header="Clube" Binding="{Binding DisplayClub}" Width="*" />
+            <DataGridTextColumn Header="Pts" Binding="{Binding Points}" Width="50" />
+            <DataGridTextColumn Header="J" Binding="{Binding Played}" Width="40" />
+            <DataGridTextColumn Header="V" Binding="{Binding Won}" Width="40" />
+            <DataGridTextColumn Header="E" Binding="{Binding Drawn}" Width="40" />
+            <DataGridTextColumn Header="D" Binding="{Binding Lost}" Width="40" />
+            <DataGridTextColumn Header="GP" Binding="{Binding GoalsFor}" Width="50" />
+            <DataGridTextColumn Header="GC" Binding="{Binding GoalsAgainst}" Width="50" />
+            <DataGridTextColumn Header="SG" Binding="{Binding GoalDifference}" Width="50" />
+          </DataGrid.Columns>
+        </DataGrid>
+      </Grid>
+    </Border>
+
+    <Border Grid.Column="2" Classes="card">
+      <Grid RowDefinitions="Auto,*">
+        <TextBlock Classes="h2" Text="ELENCO" />
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Squad}" IsReadOnly="True" AutoGenerateColumns="False">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Jogador" Binding="{Binding Name}" Width="*" />
+            <DataGridTextColumn Header="Pos" Binding="{Binding Position}" Width="50" />
+            <DataGridTextColumn Header="Idade" Binding="{Binding Age}" Width="50" />
+            <DataGridTextColumn Header="Força" Binding="{Binding Strength}" Width="55" />
+          </DataGrid.Columns>
+        </DataGrid>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

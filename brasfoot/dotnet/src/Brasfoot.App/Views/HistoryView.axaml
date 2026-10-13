@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             x:Class="Brasfoot.App.Views.HistoryView"
+             x:DataType="vm:HistoryViewModel">
+  <Border Classes="card">
+    <Grid RowDefinitions="Auto,*">
+      <TextBlock Classes="h2" Text="CAMPEÕES" />
+      <DataGrid Grid.Row="1" ItemsSource="{Binding Champions}" IsReadOnly="True" AutoGenerateColumns="False">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Temporada" Binding="{Binding Season}" Width="100" />
+          <DataGridTextColumn Header="Competição" Binding="{Binding Competition}" Width="*" />
+          <DataGridTextColumn Header="Campeão" Binding="{Binding Champion}" Width="*" />
+          <DataGridTextColumn Header="Vice" Binding="{Binding RunnerUp}" Width="*" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </Grid>
+  </Border>
+</UserControl>

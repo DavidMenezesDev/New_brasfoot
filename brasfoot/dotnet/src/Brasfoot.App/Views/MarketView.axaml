@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Brasfoot.App.ViewModels"
+             x:Class="Brasfoot.App.Views.MarketView"
+             x:DataType="vm:MarketViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="12">
+    <Grid ColumnDefinitions="220,*,Auto" ColumnSpacing="12">
+      <ComboBox ItemsSource="{Binding PositionFilters}" SelectedItem="{Binding PositionFilter}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:PositionOption">
+            <TextBlock Text="{Binding Name}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBox Grid.Column="1" Text="{Binding SearchText}" Watermark="Buscar jogador à venda" />
+      <TextBlock Grid.Column="2" Text="{Binding Cash}" VerticalAlignment="Center" />
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,360" RowDefinitions="*,Auto" ColumnSpacing="12" RowSpacing="12">
+      <Border Classes="card" Grid.RowSpan="2">
+        <Grid RowDefinitions="Auto,*">
+          <TextBlock Classes="h2" Text="JOGADORES À VENDA" />
+          <DataGrid Grid.Row="1" ItemsSource="{Binding Listings}" SelectedItem="{Binding SelectedListing}"
+                    IsReadOnly="True" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Jogador" Binding="{Binding Name}" Width="*" />
+              <DataGridTextColumn Header="Pos" Binding="{Binding Position}" Width="80" />
+              <DataGridTextColumn Header="Clube" Binding="{Binding Club}" Width="*" />
+              <DataGridTextColumn Header="Força" Binding="{Binding Strength}" Width="55" />
+              <DataGridTextColumn Header="Idade" Binding="{Binding Age}" Width="50" />
+              <DataGridTextColumn Header="Pedido" Binding="{Binding Asking}" Width="110" />
+              <DataGridTextColumn Header="Disposição" Binding="{Binding Willingness}" Width="150" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="NEGOCIAR" />
+          <TextBlock Text="{Binding SelectedListing.Name}" FontSize="15" FontWeight="SemiBold" />
+          <TextBlock Classes="muted" Text="{Binding SelectedListing.Club}" />
+          <TextBlock Text="{Binding SelectedListing.Asking, StringFormat='Pedido: {0}'}" />
+          <Button Content="Comprar pelo pedido" Classes="accent" HorizontalAlignment="Stretch" Command="{Binding BuyCommand}" />
+          <TextBox Text="{Binding OfferText}" Watermark="Valor da proposta" />
+          <Button Content="Fazer proposta" HorizontalAlignment="Stretch" Command="{Binding OfferCommand}" />
+          <Border IsVisible="{Binding HasCounter}" Background="#1F3A2B" CornerRadius="4" Padding="10">
+            <StackPanel Spacing="6">
+              <TextBlock Text="{Binding CounterText}" TextWrapping="Wrap" />
+              <Button Content="Aceitar" Classes="accent" Command="{Binding AcceptCounterCommand}" />
+            </StackPanel>
+          </Border>
+          <Button Content="Pedir emprestado" HorizontalAlignment="Stretch" Command="{Binding RequestLoanCommand}" />
+          <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Column="1" Grid.Row="1" Classes="card">
+        <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8">
+          <TextBlock Classes="h2" Text="MINHAS VENDAS" />
+          <DataGrid Grid.Row="1" ItemsSource="{Binding Squad}" SelectedItem="{Binding SelectedSale}"
+                    IsReadOnly="True" AutoGenerateColumns="False" MaxHeight="260">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Jogador" Binding="{Binding Name}" Width="*" />
+              <DataGridTextColumn Header="Força" Binding="{Binding Strength}" Width="50" />
+              <DataGridTextColumn Header="Valor" Binding="{Binding Value}" Width="100" />
+              <DataGridTextColumn Header="À venda" Binding="{Binding Asking}" Width="100" />
+            </DataGrid.Columns>
+          </DataGrid>
+          <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <TextBox Text="{Binding SalePriceText}" Watermark="Preço" />
+            <Button Grid.Column="1" Content="Colocar à venda" Command="{Binding ListForSaleCommand}" />
+            <Button Grid.Column="2" Content="Tirar" Command="{Binding UnlistCommand}" />
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>
