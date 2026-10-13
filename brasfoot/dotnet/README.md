@@ -174,15 +174,52 @@ dotnet run --project src/Brasfoot.Cli -- copadobrasil
   quando o mesmo clube venceu os dois títulos — ver `Core/Competitions/Supercup` e
   `re/spec-calendario-competicoes.md` §6.3.
 
+## Estaduais, regionais e amistosos (Fase 4)
+
+- `Core/Competitions/StateFormulaTable`: dados fixos de `best.aq` — a tabela de fórmulas (`sL`), os
+  rótulos (`sN`), o grupo padrão de São Paulo (`sO`) e sigla/nome/gentílico dos 27 estados (`rX`/`rY`/`rZ`).
+- `Core/Competitions/ConfigEstadualType`: a configuração de uma divisão estadual (`est.ConfigEstadualType`),
+  lida dos `conf_estadual/*.ces` por `WorldLoader.LoadStateConfigs` (chave `(estado, divisão)`), com as
+  validações dos setters originais e `FinalsLegsFormatted` (`getFinaisIdaVoltaFormatado`).
+- `Core/Competitions/PhasedCompetition` (`f.s` com grupos + chave `f.z`): competição em duas fases —
+  1ª fase como liga(s) de grupo (ou um único cruzamento entre grupos para as fórmulas 7/10), e mata-mata
+  criado ao fim dela com `BracketSeeder` (`FromGroupQualifiers`/`FromList`, matriz nacional para 7/10).
+  Os dias de 1ª fase e de mata-mata são reservados de antemão nos dias livres do tipo e consumidos em
+  ordem (`CupCompetition` interno, criado preguiçosamente em `AdvanceAfterDay`).
+- `Core/Competitions/StateFederation` (federação estadual, `best.w`): monta as divisões de um estado a
+  partir dos clubes brasileiros daquele estado (ordem de nível/desempate, `w.dY`), com fallback para a
+  fórmula padrão 0 quando não há `.ces` ou a fórmula pede mais clubes que o pool, o grupo padrão paulista
+  (`w.z`) e a liquidação de acesso/rebaixamento (`w.ee`) em `SettlePromotionRelegation`
+  (`yW`/`yU`: candidatos a subir pela chave e rebaixados pelo fundo da tabela).
+- `Core/Competitions/SeasonBuilder`: `CreateStateChampionships` (todas as federações com ≥6 clubes,
+  como `w.dZ`) e `CreateRegionalChampionships` (`f.F.an`): cada região (Rio-SP, Sul-Minas, Copa do
+  Nordeste, Copa Verde) reúne os 16 primeiros clubes das suas federações, ordenados por `abm`
+  (`CompareRegional`) e intercalados por `h.a.ad(4,4)` (`InterleaveQuarters`); fase de grupos 4×4 e
+  mata-mata de 8 (três fases de ida e volta). `GameSession.StateFederations`/`.Phased` guardam tudo.
+- `Core/Competitions/FriendlyMatch` (`f.a`): convite de amistoso — aceite/cachê por reputação do
+  adversário (tabelas por país e por quem manda), recusa para clubes grandes, adversário humano aceita
+  de graça — e criação do jogo. `FriendlyTournament` (`f.L`/"Torneio Amistoso"): 8 clubes em 2 grupos de
+  4 e mata-mata de 4 em jogo único, nos dias `TorneioAmistoso` (`CreateFromWorld` aproxima a ordem de
+  `P()` por `World.Teams`). `GameSession.RecordPhasedResults` contabiliza e avança essas competições a
+  cada dia. Testado em `tests/Brasfoot.Tests/StateChampionshipTests.cs`.
+
+```
+dotnet run --project src/Brasfoot.Cli -- estadual --estado SP
+dotnet run --project src/Brasfoot.Cli -- regionais
+dotnet run --project src/Brasfoot.Cli -- amistoso saopaulo_bra corinthians_bra
+dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
+```
+
 ## Ainda não portado
 
-- Estaduais (`aq.sL`/`.ces`), regionais (4 regiões) e amistosos (aceite/cachê, incl. o Torneio Amistoso
-  de pré-temporada): não investigados nesta rodada (Fase 4, prioridade 3–5); ver
-  `re/spec-calendario-competicoes.md` §5.3/§5.4/§6.6.
 - Copa do Brasil (`CopaDoBrasil`): ainda jogada de uma vez (`Play`), não integrada ao agendamento de
   `CupCompetition` — suas fases reordenam os vencedores por força entre uma fase e outra
   (`SecondStage`/`ThirdStage`/`LaterStage`), incompatível com o avanço automático de
   `KnockoutBracket.ResolveRound`; precisaria de um driver dedicado.
+- Notificação `Bh` de resultados ao técnico humano, histórico de campeões por temporada
+  (`ChampionRecord`) alimentado pelas competições e persistência das divisões estaduais entre temporadas
+  (a `StateFederation` reconstrói os quadros a partir dos clubes a cada ano; o acesso/rebaixamento
+  calculado não é aplicado aos dados do mundo ainda).
 - Mata-mata: o wrapper `f.B`/`f.z` como objeto coeso (`fc(1802/1803/90)`, hand-off do código 1020) —
   os novos `PromotionRelegation` e `BracketSeeder.DetermineGroupKnockoutSeeding` são chamados
   explicitamente por quem monta a temporada, não são métodos de um `f.B`/`f.s` portado (spec §3.7).

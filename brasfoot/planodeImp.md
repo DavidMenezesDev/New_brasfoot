@@ -190,15 +190,28 @@ Princípios:
     6 testes novos em `tests/Brasfoot.Tests/CupSchedulingTests.cs` (contagem de dias por perna, copa de
     jogo único e ida-e-volta jogadas até o fim pelo laço de dias real, fallback/ausência da Supercopa).
     206 testes no total.
-  - **Falta:** estaduais (`aq.sL`/`.ces`), regionais (4 regiões) e amistosos (aceite/cachê, incl. o
-    Torneio Amistoso de pré-temporada) — não investigados nesta rodada, prioridades 3–5 da sessão
-    ficaram de fora por orçamento. A Copa do Brasil (`CopaDoBrasil.Play`) continua jogada de uma vez só,
-    não integrada ao `CupCompetition`: suas fases reordenam os vencedores por força entre uma fase e
-    outra (`SecondStage`/`ThirdStage`/`LaterStage`), incompatível com o avanço automático de
-    `KnockoutBracket.ResolveRound` — precisaria de um driver dedicado (`CopaDoBrasilSchedule`) que ainda
-    não foi escrito. A notificação `Bh` também não foi portada. A bookkeeping de "campeão/vice da
-    temporada anterior" que alimentaria `Supercup.Create` automaticamente (histórico de campeões por
-    competição) também não existe ainda — hoje os três times são passados explicitamente pelo chamador.
+  - **Feito (estaduais/regionais/amistosos):** (1) estaduais — `Core/Competitions/StateFormulaTable`
+    (`aq.sL`/`sN`/`sO`/`rX`/`rY`/`rZ`), `ConfigEstadualType` (`est.ConfigEstadualType`) lido dos
+    `conf_estadual/*.ces` por `WorldLoader.LoadStateConfigs`, `PhasedCompetition` (`f.s` grupos → chave
+    `f.z`, com cruzamento entre grupos nas fórmulas 7/10 e reserva prévia dos dias de grupos + mata-mata)
+    e `StateFederation` (`best.w.dY`/`z`/`ee`: divisões por nível com fallback à fórmula padrão 0,
+    grupo padrão paulista, `SettlePromotionRelegation` com `yW`/`yU`). `SeasonBuilder.CreateStateChampionships`
+    monta todas as federações com ≥6 clubes. (2) regionais — `SeasonBuilder.CreateRegionalChampionships`
+    (`f.F.an`): 4 regiões, 16 clubes ordenados por `abm` (`CompareRegional`) e intercalados por
+    `h.a.ad(4,4)` (`InterleaveQuarters`), grupos 4×4 + mata-mata de 8 (3 fases ida-e-volta).
+    (3) amistosos — `FriendlyMatch` (`f.a`: aceite/cachê por reputação, tabelas por país/mando, recusa,
+    humano aceita de graça) e `FriendlyTournament` (`f.L`: 8 clubes em 2 grupos de 4 + mata-mata de 4
+    em jogo único, "Torneio Amistoso"/Juazeiro). `GameSession.Phased`/`StateFederations` + `RecordPhasedResults`
+    integram ao laço de dias. CLI: `estadual [--estado SP]`, `regionais`, `amistoso <c> <a>`,
+    `amistoso torneio`. 27 testes novos em `tests/Brasfoot.Tests/StateChampionshipTests.cs`. 233 testes no total.
+  - **Falta:** a Copa do Brasil (`CopaDoBrasil.Play`) continua jogada de uma vez só, não integrada ao
+    `CupCompetition`: suas fases reordenam os vencedores por força entre uma fase e outra
+    (`SecondStage`/`ThirdStage`/`LaterStage`), incompatível com o avanço automático de
+    `KnockoutBracket.ResolveRound` — precisaria de um driver dedicado que ainda não foi escrito. A
+    notificação `Bh` ainda não foi portada. O acesso/rebaixamento estadual calculado por
+    `SettlePromotionRelegation` ainda não é aplicado aos dados do mundo (a federação é reconstruída a
+    cada temporada) nem há histórico de campeões por competição/temporada (`ChampionRecord`) que
+    alimentaria automaticamente `Supercup.Create`.
 
 ### Fase 5 — Finanças e estádio (spec-financas §1)
 - `Ledger` por temporada com categorias; salários (mensal dia 2 ×4 ou semanal domingo, só em meses

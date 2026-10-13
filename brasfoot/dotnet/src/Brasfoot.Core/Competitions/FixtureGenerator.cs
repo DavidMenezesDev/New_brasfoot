@@ -169,6 +169,60 @@ public static class FixtureGenerator
 
     // ---- Tabelas fixas (best.t.g/a/v/y/b/h/a(9)/c/e/d) -----------------------
 
+    /// <summary>
+    /// Tabela de cruzamento entre grupos (<c>best.t.a(ArrayList, ArrayList)</c> com <c>cY</c>, para 4
+    /// grupos de 4, e <c>best.t.b</c> com <c>cZ</c>, para 4 grupos de 5; <c>best/t.java:900-1002</c>).
+    /// Cada time de um grupo joga exatamente uma vez contra cada time dos outros grupos — 12 rodadas ×
+    /// 8 jogos para 16 times (<c>cY</c>) e 15 rodadas × 10 jogos para 20 (<c>cZ</c>).
+    /// </summary>
+    /// <param name="groupPoolIndexes">
+    /// Grupos como listas de índices no quadro <paramref name="pool"/> de onde saem os confrontos
+    /// (a ordem dentro de cada grupo importa: é a posição usada pela tabela base-1).
+    /// </param>
+    /// <param name="pool">Quadro completo, para o mando de campo trocar apenas o índice ao inverter.</param>
+    public static List<List<Fixture>> CrossGroup(
+        IReadOnlyList<IReadOnlyList<int>> groupPoolIndexes,
+        int[][][] table,
+        int poolCount)
+    {
+        ArgumentNullException.ThrowIfNull(groupPoolIndexes);
+        ArgumentNullException.ThrowIfNull(table);
+
+        // Índice flat do (grupo, posição), base 1 na tabela.
+        var teamAt = new Func<int, int, int>((g, p) =>
+        {
+            if (g <= 0 || g > groupPoolIndexes.Count) throw new ArgumentOutOfRangeException(nameof(g));
+            var group = groupPoolIndexes[g - 1];
+            if (p <= 0 || p > group.Count) throw new ArgumentOutOfRangeException(nameof(p));
+            var index = group[p - 1];
+            if (index < 0 || index >= poolCount) throw new ArgumentOutOfRangeException(nameof(poolCount));
+            return index;
+        });
+
+        var matchesPerRound = poolCount / 2;
+        var rounds = new List<List<Fixture>>(table.Length);
+        for (var r = 0; r < table.Length; r++)
+        {
+            var row = table[r];
+            if (row.Length < matchesPerRound)
+                throw new InvalidOperationException($"Tabela {r} com {row.Length} confrontos para {matchesPerRound}.");
+            var round = new List<Fixture>(matchesPerRound);
+            for (var m = 0; m < matchesPerRound; m++)
+            {
+                var cell = row[m];
+                if (cell.Length != 4)
+                    throw new InvalidOperationException($"Célula {r}x{m} com {cell.Length} campos.");
+                var home = teamAt(cell[0], cell[1]);
+                var away = teamAt(cell[2], cell[3]);
+                if (home == away)
+                    throw new InvalidOperationException($"Confronte um time consigo na célula {r}x{m}.");
+                round.Add(new Fixture(home, away));
+            }
+            rounds.Add(round);
+        }
+        return rounds;
+    }
+
     public static List<List<Fixture>> ThreeTeams(bool doubleRound) =>
         FromTable(doubleRound ? FixtureTables.dc : FixtureTables.Jd, oneBased: false);
 

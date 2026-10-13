@@ -245,9 +245,135 @@ switch (positional[0])
         return 0;
     }
 
+    case "estadual":
+    {
+        var world = NewWorld();
+        var state = GameState.FromWorld(world, new GameOptions());
+        if (options.TryGetValue("ano", out var ey)) state.BaseYear = int.Parse(ey);
+        var session = new GameSession(state, ctx);
+        session.BuildSeasonCalendar();
+
+        var stateId = ResolveState(options.GetValueOrDefault("estado") ?? "SP");
+        var configs = WorldLoader.LoadStateConfigs(gameDir);
+        var federation = StateFederation.Build(session, stateId, configs, state.Options.UsaGrupoPadraoEstadual);
+        if (federation.Divisions.Count == 0)
+        {
+            Console.WriteLine($"{StateFormulaTable.NameOf(stateId)}: menos de 6 clubes; sem campeonato estadual.");
+            return 1;
+        }
+
+        var totalRounds = federation.Divisions.Sum(d => d.Phased.Phase1.Sum(l => l.Rounds.Count));
+        Console.WriteLine($"{StateFormulaTable.DemonymOf(stateId)} {session.Year} — {federation.Divisions.Count} divisões, {totalRounds} rodadas de grupos, {federation.Leftovers.Count} clubes de fora");
+        while (!session.SeasonEnded && !federation.Divisions.All(d => d.Phased.IsComplete))
+            session.AdvanceToNextMatchDay();
+
+        foreach (var division in federation.Divisions)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"{division.Competition.Name} — {division.Roster.Count} clubes, {division.Phased.Phase1.Sum(l => l.Rounds.Count)} rodadas, {division.Relegated} rebaixados");
+            PrintStanding(division.Phased.Standing);
+            Console.WriteLine($"Campeão: {division.Phased.Champion?.Name ?? "(não decidido)"}");
+        }
+
+        var movements = federation.SettlePromotionRelegation();
+        Console.WriteLine();
+        Console.WriteLine($"Acesso/rebaixamento: {movements.Movements.Count} movimentações");
+        foreach (var (from, to, team) in movements.Movements)
+            Console.WriteLine($"  {team.Name}: {DivisionName(federation, from)} → {DivisionName(federation, to)}");
+        return 0;
+    }
+
+    case "regionais":
+    {
+        var world = NewWorld();
+        var state = GameState.FromWorld(world, new GameOptions());
+        if (options.TryGetValue("ano", out var ry)) state.BaseYear = int.Parse(ry);
+        var session = new GameSession(state, ctx);
+        session.BuildSeasonCalendar();
+
+        var regionais = SeasonBuilder.CreateRegionalChampionships(session);
+        if (regionais.Count == 0)
+        {
+            Console.WriteLine("Nenhuma região com 16 clubes brasileiros; nada a jogar.");
+            return 1;
+        }
+
+        Console.WriteLine($"{regionais.Count} torneios regionais, {regionais.Sum(r => r.Pool.Count)} clubes");
+        while (!session.SeasonEnded && !regionais.All(r => r.IsComplete))
+            session.AdvanceToNextMatchDay();
+
+        foreach (var regional in regionais)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"{regional.Competition.Name} — {regional.Pool.Count} clubes em {regional.Groups.Count} grupos");
+            PrintStanding(regional.Standing);
+            Console.WriteLine($"Campeão: {regional.Champion?.Name ?? "(não decidido)"}");
+        }
+        return 0;
+    }
+
+    case "amistoso":
+    {
+        var world = NewWorld();
+        if (positional.Count >= 2 && positional[1].Equals("torneio", StringComparison.OrdinalIgnoreCase))
+        {
+            var state = GameState.FromWorld(world, new GameOptions());
+            if (options.TryGetValue("ano", out var ty2)) state.BaseYear = int.Parse(ty2);
+            var session = new GameSession(state, ctx);
+            session.BuildSeasonCalendar();
+
+            var count = int.Parse(options.GetValueOrDefault("times") ?? "8");
+            var field = world.Teams.Take(count).ToList();
+            var tournament = FriendlyTournament.Create(session, field);
+            Console.WriteLine($"{tournament.Competition.Name} — {field.Count} clubes em {tournament.Groups.Count} grupos de {tournament.Groups[0].Count} ({FriendlyTournament.DefaultCity})");
+            while (!session.SeasonEnded && !tournament.IsComplete)
+                session.AdvanceToNextMatchDay();
+            PrintStanding(tournament.Standing);
+            Console.WriteLine($"Campeão: {tournament.Champion?.Name ?? "(não decidido)"}");
+            return 0;
+        }
+
+        var inviter = FindTeam(world, positional[1]);
+        var opponent = FindTeam(world, positional[2]);
+        var opponentHosts = options.ContainsKey("adversario-manda");
+        var response = FriendlyMatch.Respond(inviter, opponent, opponentHosts, opponentHasMatchThatDay: false);
+        Console.WriteLine($"{inviter.Name} convida {opponent.Name} ({(opponentHosts ? "adversário manda" : "convidante manda")})");
+        Console.WriteLine($"Resposta: {response.Outcome} — cachê {response.Fee:N0}");
+        if (response.Outcome is FriendlyOutcome.Refused or FriendlyOutcome.AlreadyScheduledThatDay) return 1;
+
+        var competition = new Competition((int)CompetitionType.Amistoso, "Amistoso", CompetitionType.Amistoso);
+        var match = FriendlyMatch.Create(inviter, opponent, opponentHosts, competition, ctx.Random);
+        MatchSimulator.Play(match, ctx);
+        PostMatch.Apply(match, ctx);
+        PrintMatch(match);
+        return 0;
+    }
+
     default:
         PrintUsage();
         return 1;
+}
+
+static int ResolveState(string value)
+{
+    if (int.TryParse(value, out var id)) return id;
+    for (var i = 0; i < StateFormulaTable.Abbreviations.Length; i++)
+        if (StateFormulaTable.Abbreviations[i].Equals(value, StringComparison.OrdinalIgnoreCase)) return i;
+    throw new ArgumentException($"Estado desconhecido: {value} (use a sigla, ex.: SP)");
+}
+
+static string DivisionName(StateFederation federation, int division) =>
+    division == 0 ? "Fora da liga" : federation.Divisions[division - 1].Competition.Name;
+
+static void PrintStanding(IEnumerable<TeamStanding> rows)
+{
+    Console.WriteLine($"{"#",3} {"Clube",-28} {"Pts",4} {"J",3} {"V",3} {"E",3} {"D",3} {"GP",4} {"GC",4} {"SG",4}");
+    var pos = 0;
+    foreach (var row in rows)
+    {
+        pos++;
+        Console.WriteLine($"{pos,3} {row.Team.Name,-28} {row.Points,4} {row.Played,3} {row.Won,3} {row.Drawn,3} {row.Lost,3} {row.GoalsFor,4} {row.GoalsAgainst,4} {row.GoalDifference,4}");
+    }
 }
 
 World NewWorld(IEnumerable<string>? humans = null)
@@ -338,6 +464,10 @@ static void PrintUsage()
           temporada                            Joga a temporada da liga (--pais 1 --divisao 1 --jornadas N)
           copa [--times 8] [--ida-e-volta]     Joga um mata-mata entre clubes da divisão
           copadobrasil [--pais 1]              Joga a Copa do Brasil (formato de 8 potes de 10)
+          estadual [--estado SP] [--ano A]     Joga o campeonato estadual de um estado
+          regionais [--ano A]                  Joga os torneios regionais (Rio-SP, Sul-Minas, ...)
+          amistoso <time> <adversario>         Convite e amistoso entre dois clubes (--adversario-manda)
+          amistoso torneio [--times 8]         Joga o Torneio Amistoso de pré-temporada
           calendario [--ano A]                 Mostra o calendário da temporada (tipos e eventos)
           elenco <time>                        Elenco com força, valor e salário
           proposta <seu-time> <jogador> <valor>  Faz uma proposta por um jogador

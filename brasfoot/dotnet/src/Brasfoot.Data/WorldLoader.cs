@@ -121,6 +121,39 @@ public static class WorldLoader
     }
 
     /// <summary>
+    /// Configuração de formato das divisões dos campeonatos estaduais lida dos
+    /// <c>conf_estadual/*.ces</c> (um <c>ArrayLigaEType</c> por arquivo), chaveada por
+    /// <c>(estado, divisão)</c>. Cada item é um <c>est.ConfigEstadualType</c> com os campos
+    /// <c>id</c>, <c>divisao</c>, <c>formula</c>, <c>nRebaixados</c>, <c>desempate</c> e
+    /// <c>finaisIdaVolta</c>.
+    /// </summary>
+    public static Dictionary<(int State, int Division), ConfigEstadualType> LoadStateConfigs(string gameDir)
+    {
+        var configs = new Dictionary<(int, int), ConfigEstadualType>();
+        var dir = Path.Combine(gameDir, "conf_estadual");
+        if (!Directory.Exists(dir)) return configs;
+        foreach (var file in Directory.GetFiles(dir, "*.ces").Order(StringComparer.Ordinal))
+        {
+            var root = (JavaObject)JavaObjectReader.ReadSingle(file)!;
+            var list = root.GetOrDefault<JavaObject>("a");
+            if (list is null) continue;
+            foreach (var cfg in list.Annotations.OfType<JavaObject>())
+            {
+                var legs = cfg.GetOrDefault<object?[]>("finaisIdaVolta");
+                var config = ConfigEstadualType.Create(
+                    cfg.GetOrDefault<int>("id"),
+                    cfg.GetOrDefault<int>("divisao"),
+                    cfg.GetOrDefault<int>("formula"),
+                    cfg.GetOrDefault<int>("nRebaixados"),
+                    cfg.GetOrDefault<int>("desempate"),
+                    legs is null ? null : legs.OfType<int>().ToList());
+                configs[(config.Id, config.Division)] = config;
+            }
+        }
+        return configs;
+    }
+
+    /// <summary>
     /// Cria um jogo novo: carrega os times, monta as ligas dos países escolhidos e sorteia a força
     /// inicial de todos os jogadores.
     /// </summary>

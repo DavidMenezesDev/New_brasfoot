@@ -43,6 +43,20 @@ public sealed class GameSession
     /// </summary>
     public List<CupCompetition> Cups { get; } = new();
 
+    /// <summary>
+    /// Competições em duas fases (estaduais, regionais, Torneio Amistoso) agendadas na temporada
+    /// (Fase 4, <see cref="Competitions.PhasedCompetition"/>). As ligas da 1ª fase entram em
+    /// <see cref="Leagues"/>; o mata-mata é gerenciado pelo próprio objeto.
+    /// </summary>
+    public List<PhasedCompetition> Phased { get; } = new();
+
+    /// <summary>
+    /// Federações estaduais ativas da temporada (<c>best.w</c>), criadas por
+    /// <see cref="Competitions.SeasonBuilder.CreateStateChampionships"/>. Guardam as divisões para a
+    /// liquidação de acesso/rebaixamento no fim da temporada.
+    /// </summary>
+    public List<StateFederation> StateFederations { get; } = new();
+
     /// <summary>Ano civil da temporada corrente (<c>op() + ae - 1</c>, <c>best/f.java:1208</c>).</summary>
     public int Year => State.BaseYear + (State.Season - 1);
 
@@ -163,6 +177,7 @@ public sealed class GameSession
         Calendar.MarkUsedThroughCurrent();
         RecordLeagueResults();
         RecordCupResults();
+        RecordPhasedResults();
         Hooks.AdvanceCompetitions(this, CurrentDay);
         DispatchQueue(afterMatch: true);
         Ax();
@@ -188,6 +203,20 @@ public sealed class GameSession
         {
             cup.RecordResults(CurrentDay);
             cup.AdvanceAfterDay(Calendar, Context);
+        }
+    }
+
+    /// <summary>
+    /// Contabiliza e avança as competições em duas fases (<see cref="PhasedCompetition"/>): a 1ª fase é
+    /// registrada pelas ligas em <see cref="RecordLeagueResults"/>; aqui o mata-mata é contabilizado e,
+    /// quando a fase de grupos termina, a chave é criada e agendada nos dias já reservados.
+    /// </summary>
+    public void RecordPhasedResults()
+    {
+        foreach (var phased in Phased)
+        {
+            phased.RecordResults(CurrentDay);
+            phased.AdvanceAfterDay(Calendar, Context);
         }
     }
 

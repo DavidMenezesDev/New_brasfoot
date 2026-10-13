@@ -60,10 +60,20 @@ public sealed class LeagueCompetition
     {
         var dayType = CalendarDay.CompetitionToDay(Competition.Type);
         var days = calendar.FreeIndexesOfType(dayType, skipTwoDays);
+        ScheduleOnDays(calendar, days, random);
+    }
+
+    /// <summary>
+    /// Agenda as rodadas numa lista explícita de dias já escolhida pelo chamador (usada por
+    /// <see cref="PhasedCompetition"/> para reservar juntos a fase de grupos e o mata-mata dos
+    /// estaduais/regionais). Exige <c>days.Count &gt;= Rounds.Count</c> e consome os primeiros dias.
+    /// </summary>
+    public void ScheduleOnDays(SeasonCalendar calendar, IReadOnlyList<int> days, IGameRandom random)
+    {
         if (days.Count < Rounds.Count)
         {
             throw new InvalidOperationException(
-                $"Calendário tem {days.Count} dias livres de {dayType} para {Rounds.Count} rodadas de {Competition.Name}.");
+                $"Dias fornecidos ({days.Count}) insuficientes para {Rounds.Count} rodadas de {Competition.Name}.");
         }
 
         for (var r = 0; r < Rounds.Count; r++)

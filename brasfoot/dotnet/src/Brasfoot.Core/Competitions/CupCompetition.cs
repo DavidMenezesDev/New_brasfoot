@@ -18,8 +18,7 @@ namespace Brasfoot.Core.Competitions;
 /// (<see cref="AdvanceAfterDay"/>). Isso replica o agendamento de <c>f.s.a()</c> (<c>f/s.java:672-688</c>)
 /// para os mata-matas que, no original, moram dentro de um <c>f.z</c> solto (copa nacional, Supercopa)
 /// em vez de um <c>f.s</c> com rodadas. Não serve para a Copa do Brasil (<see cref="CopaDoBrasil"/>),
-/// cujas fases reordenam os vencedores por força entre uma fase e outra — ver
-/// <see cref="CopaDoBrasilSchedule"/>.
+/// cujas fases reordenam os vencedores por força entre uma fase e outra.
 /// </remarks>
 public sealed class CupCompetition
 {
@@ -88,6 +87,13 @@ public sealed class CupCompetition
         cup.PlaceOn(calendar, bracket.CreateFirstLegs(ctx));
         return cup;
     }
+
+    /// <summary>
+    /// Coloca os jogos de ida da primeira fase no primeiro dia reservado (passado no construtor).
+    /// Usado por <see cref="PhasedCompetition"/> para adiar a criação do mata-mata até a fase de
+    /// grupos terminar, mantendo os dias já reservados no começo da temporada.
+    /// </summary>
+    public void Begin(SeasonCalendar calendar, GameContext ctx) => PlaceOn(calendar, Bracket.CreateFirstLegs(ctx));
 
     /// <summary>
     /// Chamado a cada dia processado pela sessão (<see cref="GameSession"/>, análogo a
