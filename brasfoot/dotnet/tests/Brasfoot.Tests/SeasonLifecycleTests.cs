@@ -312,6 +312,94 @@ public class SeasonLifecycleTests
         Assert.Contains(state.Champions, c => c.Competition == "Rio-SP");
     }
 
+    // ---- Virada de temporada (GameSession.StartNextSeason) -------------------
+
+    private static void PlayWholeSeason(GameSession session)
+    {
+        var days = 0;
+        while (!session.SeasonEnded && days++ < 500)
+            session.AdvanceToNextMatchDay();
+        Assert.True(session.SeasonEnded, $"Temporada não terminou em {days} dias.");
+    }
+
+    [Fact]
+    public void StartNextSeason_resets_the_competition_lists_and_advances_the_season()
+    {
+        var world = BuildBrazilianWorld();
+        var state = GameState.FromWorld(world, new GameOptions());
+        state.BaseYear = 2022;
+        var session = new GameSession(state, TestData.Context(), new FullSeasonHooks());
+        session.BuildSeasonCalendar();
+
+        var season1Leagues = session.Leagues.ToList();
+        Assert.Equal(4, season1Leagues.Count(l => l.Competition.Type == CompetitionType.Nacional));
+
+        PlayWholeSeason(session);
+        session.AdvanceToNextMatchDay(); // arquiva os campeões
+        session.StartNextSeason();
+
+        Assert.Equal(2, state.Season);
+        Assert.Equal(2023, session.Year);
+        Assert.False(session.SeasonEnded);
+
+        // Nenhuma competição da temporada anterior sobrevive por referência.
+        Assert.All(season1Leagues, l => Assert.DoesNotContain(l, session.Leagues));
+        Assert.Equal(4, session.Leagues.Count(l => l.Competition.Type == CompetitionType.Nacional));
+        Assert.Equal(2, session.StateFederations.Count);
+    }
+
+    [Fact]
+    public void StartNextSeason_without_a_completed_season_creates_no_supercup()
+    {
+        var world = BuildBrazilianWorld();
+        var state = GameState.FromWorld(world, new GameOptions());
+        state.BaseYear = 2022;
+        var session = new GameSession(state, TestData.Context(), new FullSeasonHooks());
+        session.BuildSeasonCalendar();
+
+        session.StartNextSeason();
+
+        Assert.Equal(2, state.Season);
+        Assert.Empty(state.Champions);
+        Assert.Empty(session.Cups);
+    }
+
+    [Fact]
+    public void FullSeasonHooks_seeds_the_supercup_from_the_previous_season()
+    {
+        var world = BuildBrazilianWorld();
+        var state = GameState.FromWorld(world, new GameOptions());
+        state.BaseYear = 2022;
+        var session = new GameSession(state, TestData.Context(), new FullSeasonHooks());
+        session.BuildSeasonCalendar();
+
+        // Temporada 1: sem histórico, sem Supercopa.
+        Assert.Empty(session.Cups);
+        PlayWholeSeason(session);
+        session.AdvanceToNextMatchDay();
+
+        var leagueRecord = SeasonArchive.Find(state, 1, "Brasileirão — 1ª divisão");
+        var cupRecord = SeasonArchive.Find(state, 1, "Copa do Brasil");
+        Assert.NotNull(leagueRecord);
+        Assert.NotNull(cupRecord);
+
+        // Temporada 2: a Supercopa nasce do histórico (campeão da liga × campeão/vice da copa).
+        session.StartNextSeason();
+
+        var supercup = Assert.Single(session.Cups);
+        Assert.Equal(CompetitionType.Supercopa, supercup.Competition.Type);
+        Assert.Empty(session.BrasilCup); // a Copa do Brasil nasce depois, no gancho cD
+
+        Assert.Same(
+            state.World.Teams.First(t => t.Id == leagueRecord!.TeamId),
+            supercup.Bracket.Seeded[0]);
+        var opponent = supercup.Bracket.Seeded[1];
+        if (leagueRecord!.TeamId == cupRecord!.TeamId)
+            Assert.Equal(cupRecord.RunnerUpId, opponent.Id); // mesmo campeão: entra o vice da copa
+        else
+            Assert.Equal(cupRecord.TeamId, opponent.Id);
+    }
+
     /// <summary>
     /// Mundo sintético com 96 clubes brasileiros: 4 divisões nacionais de 24, 8 em SP e 8 no RJ
     /// (para estaduais e o regional Rio-SP) e os demais sem estado (fora de estaduais/regionais).

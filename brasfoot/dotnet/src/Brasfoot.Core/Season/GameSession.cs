@@ -33,6 +33,9 @@ public sealed class GameSession
     /// <summary>Fim de temporada alcançado (<c>bk</c>): o próximo avanço dispara a virada.</summary>
     public bool SeasonEnded { get; private set; }
 
+    /// <summary>A virada de temporada (<see cref="SeasonHooks.SeasonRollover"/>) já rodou nesta temporada.</summary>
+    private bool _rolloverDone;
+
     /// <summary>Competições liga agendadas nesta temporada (Fase 3).</summary>
     public List<LeagueCompetition> Leagues { get; } = new();
 
@@ -76,6 +79,7 @@ public sealed class GameSession
     public void BuildSeasonCalendar()
     {
         SeasonEnded = false;
+        _rolloverDone = false;
         var year = Year;
         var days = new List<CalendarDay>();
         for (var date = new DateOnly(year, 1, 1); date.Year == year; date = date.AddDays(1))
@@ -166,10 +170,42 @@ public sealed class GameSession
     {
         if (SeasonEnded)
         {
-            Hooks.SeasonRollover(this);
+            RunRollover();
             return;
         }
         AdvanceDay();
+    }
+
+    /// <summary>
+    /// <c>best.f.aa()/al()</c>: virada de temporada. Roda o gancho <see cref="SeasonHooks.SeasonRollover"/>
+    /// uma única vez por temporada (arquivo de campeões, acesso/rebaixamento, finanças).
+    /// </summary>
+    private void RunRollover()
+    {
+        if (_rolloverDone) return;
+        _rolloverDone = true;
+        Hooks.SeasonRollover(this);
+    }
+
+    /// <summary>
+    /// Inicia a temporada seguinte: garante a virada da temporada encerrada, avança
+    /// <see cref="GameState.Season"/>, descarta as competições do ano e remonta o calendário.
+    /// Versão mínima da virada de <c>best.f.al()</c> para o laço de competições — evolução semanal,
+    /// finanças e mercado de técnicos (Fases 4/5/6) ficam a cargo dos ganchos de
+    /// <see cref="SeasonHooks.SeasonRollover"/>. As competições do novo ano nascem em
+    /// <see cref="BuildSeasonCalendar"/> (via <see cref="SeasonHooks.BuildCompetitions"/>), já com a
+    /// Supercopa montada a partir do histórico da temporada anterior quando houver.
+    /// </summary>
+    public void StartNextSeason()
+    {
+        RunRollover();
+        State.Season++;
+        Leagues.Clear();
+        Cups.Clear();
+        BrasilCup.Clear();
+        Phased.Clear();
+        StateFederations.Clear();
+        BuildSeasonCalendar();
     }
 
     /// <summary><c>best.f.ap()</c>: posiciona o dia e o joga (sem a parte de interface humana).</summary>

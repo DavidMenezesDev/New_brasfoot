@@ -228,18 +228,24 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
   partir do grupo de clubes brasileiros no meio da temporada.
 - `Core/Season/FullSeasonHooks`: a montagem concreta da temporada brasileira sobre `SeasonBuilder` —
   divisões da liga nacional + estaduais + regionais em `BuildCompetitions`, a Copa do Brasil em
-  `CreateSerieDAndCopa` (nascendo no `cD`, não no início do ano) e o arquivo de campeões em
+  `CreateSerieDAndCopa` (nascendo no `cD`, não no início do ano), a Supercopa em `BuildCompetitions`
+  (a partir do histórico da temporada anterior, `CreateSupercupFromHistory`) e o arquivo de campeões em
   `SeasonRollover`. É a ponte para o front-end (Fase 10). A Série D propriamente dita (elenco via
   `best.w.Q`) ainda não é criada.
+- `GameSession.StartNextSeason`: versão mínima da virada de `best.f.al()` — garante a virada
+  (`SeasonRollover` uma vez por temporada), avança `GameState.Season`, descarta as competições do ano
+  (`Leagues`/`Cups`/`BrasilCup`/`Phased`/`StateFederations`) e remonta o calendário; as competições do
+  novo ano (e a Supercopa do histórico) nascem em `BuildSeasonCalendar`.
 - `Core/Season/SeasonArchive` + `GameState.Champions`: arquiva campeões **e vices** de todas as
   competições encerradas (`ChampionRecord` ganhou `RunnerUpId`/`RunnerUpName`), idempotente por
   `(temporada, competição)`, pulando as 1ªs fases estaduais/regionais (que vivem em `session.Leagues`).
   `SeasonBuilder.CreateSupercupFromHistory` usa esse histórico para montar a Supercopa da temporada
   seguinte (campeão da liga × campeão da copa, com o vice da copa como fallback).
-- Testado em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs` (13 testes): agendamento/dispatch do `cD`,
+- Testado em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs` (16 testes): agendamento/dispatch do `cD`,
   arquivo de liga e de copa (campeão + vice), idempotência, `Find`, Supercopa a partir do histórico
   (incluindo o fallback do vice) e uma temporada inteira sintética (96 clubes) jogada pelo
-  `FullSeasonHooks` até o arquivo dos campeões.
+  `FullSeasonHooks` até o arquivo dos campeões, mais a virada para a temporada seguinte
+  (`StartNextSeason` + Supercopa semeada pelo histórico).
 
 ## Ainda não portado
 
@@ -247,9 +253,12 @@ dotnet run --project src/Brasfoot.Cli -- amistoso torneio --times 8
   (`CreateSerieDAndCopa`) **foram portados** (ver acima). Falta a Série D propriamente dita (elenco via
   `best.w.Q`, fase classificatória + mata-mata), que `CreateSerieDAndCopa` hoje deixa de fora.
 - Histórico de campeões por temporada **foi portado** (`SeasonArchive` + `ChampionRecord` alimentado
-  pelas competições, ver acima). Falta ainda a persistência das divisões estaduais entre temporadas (a
-  `StateFederation` reconstrói os quadros a partir dos clubes a cada ano; o acesso/rebaixamento calculado
-  não é aplicado aos dados do mundo ainda).
+  pelas competições) e a Supercopa da temporada nasce dele (`SeasonBuilder.CreateSupercupFromHistory`
+  via `FullSeasonHooks`); a virada da temporada (`GameSession.StartNextSeason`) **foi portada** na versão
+  mínima. Falta ainda a persistência das divisões estaduais entre temporadas (a
+  `StateFederation` reconstrói os quadros pelo nível a cada ano, como o original; o acesso/rebaixamento
+  calculado por `SettlePromotionRelegation` não é aplicado aos dados do mundo) e a virada completa
+  (evolução semanal, finanças, mercado de técnicos).
 - Mata-mata: o wrapper `f.B`/`f.z` como objeto coeso (`fc(1802/1803/90)`, hand-off do código 1020) —
   os novos `PromotionRelegation` e `BracketSeeder.DetermineGroupKnockoutSeeding` são chamados
   explicitamente por quem monta a temporada, não são métodos de um `f.B`/`f.s` portado (spec §3.7).

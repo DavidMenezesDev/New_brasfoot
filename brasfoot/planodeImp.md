@@ -223,13 +223,16 @@ Princípios:
     por `(temporada, competição)` em `GameState.Champions` (`ChampionRecord` estendido com
     `RunnerUpId`/`RunnerUpName`, idempotente, pula competições não encerradas e as 1ªs fases
     estaduais/regionais); `SeasonBuilder.CreateSupercupFromHistory` monta a Supercopa da temporada
-    seguinte a partir desse histórico (com o fallback do vice da copa). 13 testes novos em
-    `tests/Brasfoot.Tests/SeasonLifecycleTests.cs`. 253 testes no total.
+    seguinte a partir desse histórico (com o fallback do vice da copa); `FullSeasonHooks.BuildCompetitions`
+    cria a Supercopa da temporada já com esse histórico. `GameSession.StartNextSeason` (versão mínima da
+    virada de `best.f.al()`) garante a virada, avança a temporada, descarta as competições do ano e
+    remonta o calendário. 16 testes novos em `tests/Brasfoot.Tests/SeasonLifecycleTests.cs`. 256 testes
+    no total.
   - **Falta:** a Série D propriamente dita (criação do elenco via `best.w.Q`, fase classificatória +
     mata-mata), que `CreateSerieDAndCopa` hoje deixa de fora (só a Copa do Brasil). O acesso/rebaixamento
     estadual calculado por `SettlePromotionRelegation` ainda não é aplicado aos dados do mundo (a
-    federação é reconstruída a cada temporada); `FullSeasonHooks` ainda não cria a Supercopa nem roda a
-    virada completa (evolução, finanças, mercado de técnicos).
+    federação é reconstruída pelo nível a cada temporada, como no original). A virada completa
+    (evolução semanal, finanças, mercado de técnicos) fica para as Fases 4/5/6.
 
 ### Fase 5 — Finanças e estádio (spec-financas §1)
 - `Ledger` por temporada com categorias; salários (mensal dia 2 ×4 ou semanal domingo, só em meses
